@@ -33,15 +33,10 @@ class StatisticsCollectorFactory:
     @staticmethod
     def __create_statistics_collector(statistics_collector_parameters: StatisticsCollectorParameters,
                                       patterns: List[Pattern]):
-        """
-        Currently, multi-pattern is not supported.
-        TODO: To support multi-pattern mode it will need to go through a loop and create statistics for each pattern.
-        """
-        pattern = patterns[0]
         statistics_time_window = statistics_collector_parameters.statistics_time_window
         statistics_dict = {}
         for stat_type in statistics_collector_parameters.statistics_types:
-            stat = StatisticsFactory.create_statistics(pattern, stat_type, statistics_time_window)
+            stat = StatisticsFactory.create_statistics(patterns, stat_type, statistics_time_window)
             statistics_dict[stat_type] = stat
         return StatisticsCollector(statistics_dict)
 

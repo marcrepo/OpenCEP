@@ -48,6 +48,8 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
         self.__freeze_map = {}
         self.__active_freezers = []
 
+        self.count = 0
+
         if not self.__is_multi_pattern_mode and self._pattern.consumption_policy is not None and \
                 self._pattern.consumption_policy.freeze_names is not None:
             self.__init_freeze_map()
@@ -67,6 +69,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
             self.__remove_expired_freezers(event)
 
             if not self.__is_multi_pattern_mode and self.__statistics_collector is not None:
+                # self.count += 1
                 # TODO: support multi-pattern mode
                 last_statistics_refresh_time = self.__perform_reoptimization(last_statistics_refresh_time, event)
 
@@ -77,6 +80,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
         # collect them now
         self._get_last_pending_matches(matches)
         matches.close()
+        # print(self.__optimizer.count)
 
     def __perform_reoptimization(self, last_statistics_refresh_time: timedelta, last_event: Event):
         """
@@ -87,12 +91,13 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
         if not self._should_try_reoptimize(last_statistics_refresh_time, last_event):
             # it is not yet time to recalculate the statistics
             return last_statistics_refresh_time
-        new_statistics = self.__statistics_collector.get_statistics()
-        if self.__optimizer.should_optimize(new_statistics, self._pattern):
-            new_tree_plan = self.__optimizer.build_new_plan(new_statistics, self._pattern)
+
+        new_tree_plan = self.__optimizer.try_optimize(self._pattern)
+
+        if new_tree_plan:
             new_tree = Tree(new_tree_plan, self._pattern, self.__storage_params)
             self._tree_update(new_tree, last_event.timestamp)
-        # this is the new last statistic refresh time
+
         return last_event.timestamp
 
     def _should_try_reoptimize(self, last_statistics_refresh_time: timedelta, last_event: Event):

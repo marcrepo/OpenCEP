@@ -17,11 +17,18 @@ class StatisticsCollector:
         """
         self.update_statistics_by_type(StatisticsTypes.ARRIVAL_RATES, event)
 
-    def get_statistics(self):
+    def get_specific_statistics(self, pattern):
         """
         Returns a dictionary containing the statistics types and the raw statistics accordingly.
         """
-        return {statistics_type: statistics.get_statistics() for statistics_type, statistics in
+        return {statistics_type: statistics.get_specific_statistics(pattern) for statistics_type, statistics in
+                self.__statistics.items()}
+
+    def get_all_statistics(self):
+        """
+        Returns a dictionary containing the statistics types and the raw statistics accordingly.
+        """
+        return {statistics_type: statistics.get_all_statistics() for statistics_type, statistics in
                 self.__statistics.items()}
 
     def update_statistics_by_type(self, statistics_type: StatisticsTypes, data):

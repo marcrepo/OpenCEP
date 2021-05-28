@@ -1,5 +1,5 @@
 import copy
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import timedelta, datetime
 from typing import List
 from base.Event import Event
@@ -26,9 +26,17 @@ class Statistics(ABC):
         """
         raise NotImplementedError()
 
-    def get_statistics(self):
+    @abstractmethod
+    def get_all_statistics(self):
         """
         Return the current statistics.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_specific_statistics(self, pattern):
+        """
+        Given pattern, return his statistics
         """
         raise NotImplementedError()
 
@@ -37,18 +45,22 @@ class ArrivalRatesStatistics(Statistics):
     """
     Represents the arrival rates statistics.
     """
-    def __init__(self, arrival_rates_time_window: timedelta, pattern: Pattern, predefined_statistics: List = None):
-        primitive_events = pattern.get_primitive_events()
-        self.__arrival_rates = [0.0] * len(primitive_events) if not predefined_statistics else predefined_statistics
-        self.__event_type_to_indices_map = {}
-        for i, arg in enumerate(primitive_events):
-            if arg.type in self.__event_type_to_indices_map:
-                self.__event_type_to_indices_map[arg.type].append(i)
-            else:
-                self.__event_type_to_indices_map[arg.type] = [i]
-        self.__events_arrival_time = []
+
+    def __init__(self, arrival_rates_time_window: timedelta, patterns: List[Pattern],
+                 predefined_statistics=None):
         self.__arrival_rates_time_window = arrival_rates_time_window
-        self.__last_timestamp = None
+        self.__events_arrival_time = []
+
+        self.__event_type_to_patterns_map = {}
+        self.__event_type_to_arrival_rates = {}
+        self.__pattern_to_event_types_map = {}
+        self.__pattern_to_arrival_rates = {}
+
+        # Initialize
+        self.__init_maps(patterns, predefined_statistics)
+
+    def __create_initialize_statistics(self, pattern: Pattern, args_len: int):
+        self.__pattern_to_arrival_rates[pattern] = [0.0] * args_len
 
     def update(self, event: Event):
         """
@@ -57,12 +69,10 @@ class ArrivalRatesStatistics(Statistics):
         event_type = event.type
         event_timestamp = event.timestamp
 
-        if event_type in self.__event_type_to_indices_map:
+        if event_type in self.__event_type_to_arrival_rates:
             self.__events_arrival_time.append(StatisticEventData(event_timestamp, event_type))
 
-            indices = self.__event_type_to_indices_map[event_type]
-            for index in indices:
-                self.__arrival_rates[index] += 1
+            self.__event_type_to_arrival_rates[event_type] += 1
 
         self.__remove_expired_events(event_timestamp)
 
@@ -73,9 +83,7 @@ class ArrivalRatesStatistics(Statistics):
         is_removed_elements = False
         for i, event_time in enumerate(self.__events_arrival_time):
             if last_timestamp - event_time.timestamp > self.__arrival_rates_time_window:
-                indices = self.__event_type_to_indices_map[event_time.event_type]
-                for index in indices:
-                    self.__arrival_rates[index] -= 1
+                self.__event_type_to_arrival_rates[event_time.event_type] -= 1
 
             else:
                 is_removed_elements = True
@@ -85,31 +93,70 @@ class ArrivalRatesStatistics(Statistics):
         if not is_removed_elements:
             self.__events_arrival_time = []
 
-    def get_statistics(self):
-        return copy.deepcopy(self.__arrival_rates)
+    def get_specific_statistics(self, pattern):
+        """
+        Given pattern, return his corresponding selectivity statistics for tree builder
+        """
+        arrival_rates = self.__pattern_to_arrival_rates[pattern]
+        for i, event_type in enumerate(self.__pattern_to_event_types_map[pattern]):
+            arrival_rates[i] = self.__event_type_to_arrival_rates[event_type]
+
+        return copy.deepcopy(arrival_rates)
+
+    def get_all_statistics(self):
+        """
+        Calculates the selectivity of all the conditions.
+        If there is no condition between any pair of events then the selectivity is always 1.0
+        """
+        return copy.deepcopy(self.__event_type_to_arrival_rates)
+
+    def __init_maps(self, patterns: List[Pattern], predefined_arrival_rates):
+        for pattern in patterns:
+            primitive_events = pattern.get_primitive_events()
+            # For reconstruction
+            self.__pattern_to_event_types_map[pattern] = [primitive_event.type for primitive_event in primitive_events]
+
+            self.__create_initialize_statistics(pattern, len(primitive_events))
+
+            #  This for know after which pattern was changed(saves us run time-eliminate from recursion)
+            for primitive_event in primitive_events:
+                event_type = primitive_event.type
+                if event_type not in self.__event_type_to_patterns_map:
+                    self.__event_type_to_patterns_map[event_type] = set()
+                self.__event_type_to_patterns_map[event_type].add(pattern)
+
+                if event_type not in self.__event_type_to_arrival_rates:
+
+                    if event_type in predefined_arrival_rates:
+                        arrival_rates = predefined_arrival_rates[event_type]
+                    else:
+                        arrival_rates = 0.0
+
+                    self.__event_type_to_arrival_rates[event_type] = arrival_rates
 
 
 class SelectivityStatistics(Statistics):
-    """
-    Represents the selectivity statistics.
-    NOTE: Currently it ignores the time window
-    """
-    # TODO: support time window for selectivity
 
-    def __init__(self, pattern: Pattern, predefined_statistics: List[List[float]] = None):
-        self.__args = pattern.get_primitive_events()
-        self.__args_len = len(self.__args)
+    def __init__(self, patterns: List[Pattern], predefined_statistics=None):
         self.__atomic_condition_to_total_map = {}
         self.__atomic_condition_to_success_map = {}
         self.__indices_to_atomic_condition_map = {}
-        self.__relevant_indices = set()
+        self.__atomic_condition_to_patterns_map = {}
+        self.__atomic_condition_to_selectivity_map = {}
+        self.__pattern_to_selectivity_matrix_map = {}
+        self.__pattern_to_another_dict = {}
 
-        if not predefined_statistics:
-            self.__selectivity_matrix = [[1.0 for _ in range(self.__args_len)] for _ in range(self.__args_len)]
-        else:
-            self.__selectivity_matrix = predefined_statistics
+        # Initialize
+        self.__init_maps(patterns, predefined_statistics)
 
-        self.__init_maps(pattern)
+    def __create_initialize_statistics(self, pattern: Pattern, args_len: int):
+        """
+        Given pattern, initialize his corresponding selectivity statistics with ones.
+        Note that not all entrances in the matrix will update by run time (because just
+        2 events and conditions between them can be changed).
+        Hence entrances that will not change remain 1.
+        """
+        self.__pattern_to_selectivity_matrix_map[pattern] = [[1.0 for _ in range(args_len)] for _ in range(args_len)]
 
     def update(self, data):
         """
@@ -124,42 +171,75 @@ class SelectivityStatistics(Statistics):
                 if is_condition_success:
                     self.__atomic_condition_to_success_map[atomic_condition_id] += 1
 
-    def get_statistics(self):
+    def get_specific_statistics(self, pattern):
         """
-        Calculates the value of cell (i, j) in the selectivity matrix by multiplying the atomic selectivities of
-        all the conditions between event i and event j.
+        Given pattern, return his corresponding selectivity statistics for tree builder
+        """
+        selectivity_matrix = self.__pattern_to_selectivity_matrix_map[pattern]
+
+        #  Thank to initialization, currently, we can update just entrances in the matrix
+        #  that could be change in run time
+        indices_to_atomic_condition_map = self.__pattern_to_another_dict[pattern]
+        for (i, j), atomic_conditions_id in indices_to_atomic_condition_map.items():
+            selectivity = self.__atomic_condition_to_selectivity_map[atomic_conditions_id]
+            selectivity_matrix[i][j] = selectivity_matrix[j][i] = selectivity
+
+        return copy.deepcopy(selectivity_matrix)
+
+    def get_all_statistics(self):
+        """
+        Calculates the selectivity of all the conditions.
         If there is no condition between any pair of events then the selectivity is always 1.0
         """
-        for i, j in self.__relevant_indices:
-            atomic_conditions_id = self.__indices_to_atomic_condition_map[(i, j)]
+        for atomic_condition_id in self.__atomic_condition_to_total_map:
+            selectivity = self.__compute_selectivity(atomic_condition_id)
+            self.__atomic_condition_to_selectivity_map[atomic_condition_id] = selectivity
 
-            # computation of the (i, j), (j, i) entries in the selectivity matrix
-            selectivity = 1.0
-            for atomic_condition_id in atomic_conditions_id:
-                numerator = self.__atomic_condition_to_success_map[atomic_condition_id]
-                denominator = self.__atomic_condition_to_total_map[atomic_condition_id]
-                if denominator != 0.0:
-                    selectivity *= (numerator / denominator)
+        return copy.deepcopy(self.__atomic_condition_to_selectivity_map)
 
-            self.__selectivity_matrix[j][i] = self.__selectivity_matrix[i][j] = copy.deepcopy(selectivity)
+    def __compute_selectivity(self, atomic_condition_id):
+        selectivity = 1.0
+        numerator = self.__atomic_condition_to_success_map[atomic_condition_id]
+        denominator = self.__atomic_condition_to_total_map[atomic_condition_id]
+        if denominator != 0.0:
+            selectivity *= (numerator / denominator)
 
-        return copy.deepcopy(self.__selectivity_matrix)
+        return selectivity
 
-    def __init_maps(self, pattern: Pattern):
+    def __init_maps(self, patterns: List[Pattern], predefined_selectivity):
         """
         Initiates the success counters and total evaluation counters for each pair of event types.
         """
-        for i in range(self.__args_len):
-            for j in range(i + 1):
-                conditions = pattern.condition.get_condition_of({self.__args[i].name, self.__args[j].name})
-                atomic_conditions = conditions.extract_atomic_conditions()
-                for atomic_condition in atomic_conditions:
-                    if atomic_condition:
-                        atomic_condition_id = str(atomic_condition)
-                        self.__relevant_indices.add((i, j))
-                        self.__atomic_condition_to_total_map[atomic_condition_id] = 0.0
-                        self.__atomic_condition_to_success_map[atomic_condition_id] = 0.0
-                        if (i, j) in self.__indices_to_atomic_condition_map:
-                            self.__indices_to_atomic_condition_map[(i, j)].append(atomic_condition_id)
-                        else:
-                            self.__indices_to_atomic_condition_map[(i, j)] = [atomic_condition_id]
+        for pattern in patterns:
+            primitive_events = pattern.get_primitive_events()
+            self.__create_initialize_statistics(pattern, len(primitive_events))
+
+            indices_to_atomic_condition_map = {}
+
+            for i in range(len(primitive_events)):
+                for j in range(i + 1):
+                    conditions = pattern.condition.get_condition_of({primitive_events[i].name, primitive_events[j].name})
+                    atomic_conditions = conditions.extract_atomic_conditions()
+                    for atomic_condition in atomic_conditions:
+                        if atomic_condition:
+                            atomic_condition_id = str(atomic_condition)
+
+                            #  This for know after which pattern was changed(saves us run time-eliminate from recursion)
+                            if atomic_condition_id in self.__atomic_condition_to_patterns_map:
+                                self.__atomic_condition_to_patterns_map[atomic_condition_id].append(pattern)
+                            else:
+                                self.__atomic_condition_to_patterns_map[atomic_condition_id] = [pattern]
+
+                            if atomic_condition_id not in self.__atomic_condition_to_selectivity_map:
+                                if atomic_condition_id in predefined_selectivity:
+                                    success, total = predefined_selectivity[atomic_condition_id]
+                                else:
+                                    success = total = 0.0
+                                self.__atomic_condition_to_success_map[atomic_condition_id] = success
+                                self.__atomic_condition_to_total_map[atomic_condition_id] = total
+                                self.__atomic_condition_to_selectivity_map[atomic_condition_id] = \
+                                    self.__compute_selectivity(atomic_condition_id)
+
+                            indices_to_atomic_condition_map[(i, j)] = atomic_condition_id
+
+            self.__pattern_to_another_dict[pattern] = indices_to_atomic_condition_map

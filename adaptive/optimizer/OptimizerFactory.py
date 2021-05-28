@@ -1,5 +1,6 @@
 from datetime import timedelta
 from adaptive.optimizer.OptimizerTypes import OptimizerTypes
+from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorParameters
 from misc import DefaultConfig
 from adaptive.statistics.StatisticsTypes import StatisticsTypes
@@ -68,32 +69,26 @@ class OptimizerFactory:
     Creates an optimizer given its specification.
     """
     @staticmethod
-    def build_optimizer(optimizer_parameters: OptimizerParameters):
+    def build_optimizer(optimizer_parameters: OptimizerParameters, statistics_collector: StatisticsCollector):
         if optimizer_parameters is None:
             optimizer_parameters = OptimizerFactory.__create_default_optimizer_parameters()
-        return OptimizerFactory.__create_optimizer(optimizer_parameters)
+        return OptimizerFactory.__create_optimizer(optimizer_parameters, statistics_collector)
 
     @staticmethod
-    def __create_optimizer(optimizer_parameters: OptimizerParameters):
+    def __create_optimizer(optimizer_parameters: OptimizerParameters, statistics_collector: StatisticsCollector):
         tree_plan_builder = TreePlanBuilderFactory.create_tree_plan_builder(optimizer_parameters.tree_plan_params)
         is_adaptivity_enabled = optimizer_parameters.statistics_updates_time_window is not None
         if optimizer_parameters.type == OptimizerTypes.TRIVIAL_OPTIMIZER:
-            return Optimizer.TrivialOptimizer(tree_plan_builder, is_adaptivity_enabled)
+            return Optimizer.TrivialOptimizer(tree_plan_builder, is_adaptivity_enabled, statistics_collector)
 
         if optimizer_parameters.type == OptimizerTypes.STATISTICS_DEVIATION_AWARE_OPTIMIZER:
             deviation_threshold = optimizer_parameters.deviation_threshold
-            type_to_deviation_aware_tester_map = {}
-            for stat_type in optimizer_parameters.statistics_types:
-                deviation_aware_tester = DeviationAwareTesterFactory.create_deviation_aware_tester(stat_type,
-                                                                                                   deviation_threshold)
-                type_to_deviation_aware_tester_map[stat_type] = deviation_aware_tester
-
             return Optimizer.StatisticsDeviationAwareOptimizer(tree_plan_builder, is_adaptivity_enabled,
-                                                               type_to_deviation_aware_tester_map)
+                                                               deviation_threshold, statistics_collector)
 
         if optimizer_parameters.type == OptimizerTypes.INVARIANT_AWARE_OPTIMIZER:
             if isinstance(tree_plan_builder, InvariantTreePlanBuilder):
-                return Optimizer.InvariantsAwareOptimizer(tree_plan_builder, is_adaptivity_enabled)
+                return Optimizer.InvariantsAwareOptimizer(tree_plan_builder, is_adaptivity_enabled, statistics_collector)
             else:
                 raise Exception("Tree plan builder must be invariant aware")
 

@@ -6,6 +6,7 @@ from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from base.Pattern import Pattern
 from evaluation.EvaluationMechanismTypes import EvaluationMechanismTypes
 from misc import DefaultConfig
+from tree.evaluation.MultiPatternTreeBasedEvaluationMechanism import MultiPatternTreeBasedEvaluationMechanism
 from tree.evaluation.TreeEvaluationMechanismUpdateTypes import TreeEvaluationMechanismUpdateTypes
 from adaptive.optimizer.OptimizerFactory import OptimizerParameters, OptimizerFactory, \
     StatisticsDeviationAwareOptimizerParameters
@@ -49,7 +50,7 @@ class EvaluationMechanismFactory:
     """
     @staticmethod
     def build_eval_mechanism(eval_mechanism_params: EvaluationMechanismParameters,
-                             patterns: Pattern):
+                             patterns: List[Pattern]):
         if eval_mechanism_params is None:
             eval_mechanism_params = EvaluationMechanismFactory.__create_default_eval_parameters()
         if eval_mechanism_params.type == EvaluationMechanismTypes.TREE_BASED:
@@ -131,6 +132,13 @@ class EvaluationMechanismFactory:
 
         if tree_update_type == TreeEvaluationMechanismUpdateTypes.SIMULTANEOUS_TREE_EVALUATION:
             return SimultaneousTreeBasedEvaluationMechanism(pattern_to_tree_plan_map,
+                                                            storage_params,
+                                                            statistics_collector,
+                                                            optimizer,
+                                                            statistics_update_time_window)
+
+        if tree_update_type == TreeEvaluationMechanismUpdateTypes.MULTI_PATTERN_TREE_EVALUATION:
+            return MultiPatternTreeBasedEvaluationMechanism(pattern_to_tree_plan_map,
                                                             storage_params,
                                                             statistics_collector,
                                                             optimizer,
