@@ -26,6 +26,7 @@ class TreePlanNode(ABC):
     """
     def __init__(self, condition: CompositeCondition = AndCondition()):
         self.condition = condition
+        self._pattern_ids = set()
 
     def get_event_names(self):
         """
@@ -65,6 +66,24 @@ class TreePlanNode(ABC):
         """
         raise NotImplementedError()
 
+    def propagate_pattern_id(self, pattern_id: int):
+        """
+        Propagates the given pattern ID down the subtree of this tree plan node.
+        """
+        raise NotImplementedError()
+
+    def add_pattern_ids(self, ids: set):
+        """
+        Adds a set of Ds of patterns with which this node is associated.
+        """
+        self._pattern_ids |= ids
+
+    def get_pattern_ids(self):
+        """
+        Returns the pattern ids of this node.
+        """
+        return self._pattern_ids
+
 
 class TreePlanLeafNode(TreePlanNode):
     """
@@ -91,6 +110,9 @@ class TreePlanLeafNode(TreePlanNode):
         """
         return super().is_equivalent(other) and \
                self.event_type == other.event_type and self.event_name == other.event_name
+
+    def propagate_pattern_id(self, pattern_id: int):
+        self.add_pattern_ids({pattern_id})
 
 
 class TreePlanNestedNode(TreePlanNode):
@@ -165,6 +187,10 @@ class TreePlanUnaryNode(TreePlanInternalNode):
         """
         return super().is_equivalent(other) and self.child.is_equivalent(other.child)
 
+    def propagate_pattern_id(self, pattern_id: int):
+        self.add_pattern_ids({pattern_id})
+        self.child.propagate_pattern_id(pattern_id)
+
 
 class TreePlanKCNode(TreePlanUnaryNode):
     """
@@ -226,6 +252,11 @@ class TreePlanBinaryNode(TreePlanInternalNode):
         v3 = self.left_child.is_equivalent(other.right_child)
         v4 = self.right_child.is_equivalent(other.left_child)
         return v3 and v4
+
+    def propagate_pattern_id(self, pattern_id: int):
+        self.add_pattern_ids({pattern_id})
+        self.left_child.propagate_pattern_id(pattern_id)
+        self.right_child.propagate_pattern_id(pattern_id)
 
 
 class TreePlanNegativeBinaryNode(TreePlanBinaryNode):
