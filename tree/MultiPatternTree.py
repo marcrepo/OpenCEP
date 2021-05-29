@@ -12,12 +12,15 @@ class MultiPatternTree:
     """
     Represents a multi-pattern evaluation tree.
     """
+
     def __init__(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                  storage_params: TreeStorageParameters):
         self.__id_to_output_node_map = {}
         self.__id_to_pattern_map = {}
         self.__output_nodes = []
+        self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
         self.__construct_multi_pattern_tree(pattern_to_tree_plan_map, storage_params)
+        self.__propagate_pattern_ids()
 
     def __construct_multi_pattern_tree(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                                        storage_params: TreeStorageParameters):
@@ -88,3 +91,15 @@ class MultiPatternTree:
             first_unbounded_negative_node.flush_pending_matches()
             # the pending matches were released and have hopefully reached the roots
         return self.get_matches()
+
+    def get_specific_output_node(self, pattern: Pattern):
+        return self.__id_to_output_node_map[pattern.id]
+
+    def __propagate_pattern_ids(self):
+        for pattern, tree_plan in self.pattern_to_tree_plan_map.items():
+            self.propagate_pattern_id(pattern.id, tree_plan)
+
+    @staticmethod
+    def propagate_pattern_id(pattern_id: int, tree_plan: TreePlan):
+        root = tree_plan.root
+        root.propagate_pattern_id(pattern_id)
