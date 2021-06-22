@@ -78,7 +78,7 @@ class MultiPatternTree:
 
         for i in range(len(a)):
 
-            new_tree_root = Tree(b[i], c[a[i]], self.__storage_params, self.__statistics_collector, self.__plan_nodes_to_nodes_map).get_root()
+            new_tree_root = Tree(b[i], c[a[i]], self.__storage_params, self.__plan_nodes_to_nodes_map).get_root()
             # print(self.f)
             self.__id_to_output_node_map[a[i]] = new_tree_root
 

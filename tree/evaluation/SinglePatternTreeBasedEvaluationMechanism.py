@@ -37,7 +37,7 @@ class SinglePatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism, AB
         new_tree_plan = self._optimizer.try_optimize()
 
         if new_tree_plan:
-            new_tree = Tree(new_tree_plan, self._pattern, self._storage_params, self._statistics_collector)
+            new_tree = Tree(new_tree_plan, self._pattern, self._storage_params)
             self._tree_update(new_tree, last_event.timestamp)
 
             # set the new statistics collector in the Tree to be
