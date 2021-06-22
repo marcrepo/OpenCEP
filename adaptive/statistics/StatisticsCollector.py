@@ -24,12 +24,12 @@ class StatisticsCollector:
         return {statistics_type: statistics.get_specific_statistics(pattern) for statistics_type, statistics in
                 self.__statistics.items()}
 
-    def get_all_statistics(self):
-        """
-        Returns a dictionary containing the statistics types and the raw statistics accordingly.
-        """
-        return {statistics_type: statistics.get_all_statistics() for statistics_type, statistics in
-                self.__statistics.items()}
+    # def get_all_statistics(self):
+    #     """
+    #     Returns a dictionary containing the statistics types and the raw statistics accordingly.
+    #     """
+    #     return {statistics_type: statistics.get_all_statistics() for statistics_type, statistics in
+    #             self.__statistics.items()}
 
     def update_statistics_by_type(self, statistics_type: StatisticsTypes, data):
         """
@@ -38,3 +38,6 @@ class StatisticsCollector:
         """
         if statistics_type in self.__statistics:
             self.__statistics[statistics_type].update(data)
+
+    def get_item_to_patterns(self, statistics_type: StatisticsTypes):
+        return self.__statistics[statistics_type].get_item_to_patterns()
