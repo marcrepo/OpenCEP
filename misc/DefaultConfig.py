@@ -71,3 +71,8 @@ DEFAULT_TREE_UPDATE_TYPE = TreeEvaluationMechanismUpdateTypes.TRIVIAL_TREE_EVALU
 DEFAULT_STATISTICS_TYPE = [StatisticsTypes.ARRIVAL_RATES, StatisticsTypes.SELECTIVITY_MATRIX]  # the default statistics type can also be a list of types
 STATISTICS_TIME_WINDOW = timedelta(hours=1)  # Time window for statistics
 STATISTICS_UPDATES_WAIT_TIME = None  # the default wait time between statistics updates or None to disable adaptivity
+
+# multi pattern settings
+PATTERNS_CHANGED_THRESHOLD = 0.5  # the default threshold enable to use the algorithm
+IS_MULTI_PATTERN = False
+DEFAULT_TREE_PLAN_MERGER = MultiPatternTreePlanMergeApproaches.TREE_PLAN_TRIVIAL_SHARING_LEAVES
