@@ -14,36 +14,92 @@ class MultiPatternTree:
     """
 
     def __init__(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
-                 storage_params: TreeStorageParameters):
-        self.__id_to_output_node_map = {}
-        self.__id_to_pattern_map = {}
-        self.__output_nodes = []
-        self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
-        self.__construct_multi_pattern_tree(pattern_to_tree_plan_map, storage_params)
-        self.__propagate_pattern_ids()
+                 storage_params: TreeStorageParameters,
+                 statistics_collector):
 
-    def __construct_multi_pattern_tree(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
-                                       storage_params: TreeStorageParameters):
+        self.__statistics_collector = statistics_collector
+        self.__all_patterns_ids = set()
+        self.__id_to_pattern_map = {}
+
+        for pattern in pattern_to_tree_plan_map.keys():
+            self.__id_to_pattern_map[pattern.id] = pattern
+            self.__all_patterns_ids.add(pattern.id)
+
+        self.__id_to_output_node_map = {}
+
+        self.__storage_params = storage_params
+
+        self.__plan_nodes_to_nodes_map = {}  # a cache for already created subtrees
+
+        self.__construct_multi_pattern_tree(pattern_to_tree_plan_map)
+
+    def rebuild_multi_pattern_tree(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan]):
+        changed_pattern = {pattern.id for pattern in pattern_to_tree_plan_map.keys()}
+        not_changed_patterns_id = self.__all_patterns_ids - changed_pattern
+        self.__plan_nodes_to_nodes_map = self.__update_plan_nodes_to_nodes_map(not_changed_patterns_id)
+        self.__construct_multi_pattern_tree(pattern_to_tree_plan_map)
+        # rebuild_multi_pattern_tree function invoke just in adaptivity mode, hence its ok to
+        # set statistics collector to conditions
+        self.__set_statistics_collector(not_changed_patterns_id)
+
+    def __set_statistics_collector(self, not_changed_patterns_id):
+        """
+        In oposite to single pattern, in multi pattern its importent to set the same statistics collector to all patterns.
+        For some tree, he could be contains old nodes and new nodes. so we need the new nodes fave the same referance
+        to statistics collector as the old nodes.
+        """
+        # set the statistics collector reference to every atomic condition
+        patterns_not_changed = {self.__id_to_pattern_map[pattern_id] for pattern_id in not_changed_patterns_id}
+        for pattern in patterns_not_changed:
+            condition = pattern.condition
+            for atomic_condition in condition.extract_atomic_conditions():
+                atomic_condition.set_statistics_collector(self.__statistics_collector)
+
+    def __construct_multi_pattern_tree(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan]):
         """
         Constructs a multi-pattern evaluation tree.
         It is assumed that each pattern appears only once in patterns (which is a legitimate assumption).
         """
-        i = 1  # pattern IDs starts from 1
-        plan_nodes_to_nodes_map = {}  # a cache for already created subtrees
-        for pattern, plan in pattern_to_tree_plan_map.items():
-            pattern.id = i
-            new_tree_root = Tree(plan, pattern, storage_params, plan_nodes_to_nodes_map).get_root()
-            self.__id_to_output_node_map[pattern.id] = new_tree_root
-            self.__id_to_pattern_map[pattern.id] = pattern
-            self.__output_nodes.append(new_tree_root)
-            i += 1
+        # self.f += 1
+
+        # for pattern, tree_plan in pattern_to_tree_plan_map.items():
+        #
+        #     # self.propagate_pattern_id(pattern.id, tree_plan)
+        #
+        #     new_tree_root = Tree(tree_plan, pattern, self.__storage_params, self.__plan_nodes_to_nodes_map).get_root()
+        #     # print(self.f)
+        #     self.__id_to_output_node_map[pattern.id] = new_tree_root
+        # print(self.f)
+
+        c = {pattern.id: pattern for pattern in pattern_to_tree_plan_map.keys()}
+        patterns_id = [pattern.id for pattern in pattern_to_tree_plan_map.keys()]
+        a = sorted(patterns_id)
+        b = [pattern_to_tree_plan_map[c[i]] for i in a]
+
+        for i in range(len(a)):
+
+            new_tree_root = Tree(b[i], c[a[i]], self.__storage_params, self.__statistics_collector, self.__plan_nodes_to_nodes_map).get_root()
+            # print(self.f)
+            self.__id_to_output_node_map[a[i]] = new_tree_root
+
+    def __update_plan_nodes_to_nodes_map(self, not_changed_patterns_id):
+        new_plan_nodes_to_nodes_map = {}
+        for plan_node, node in self.__plan_nodes_to_nodes_map.items():
+            for pattern_id in plan_node.get_pattern_ids():
+                # if in plan_node there is at least one id its mean that this node
+                # belong to some pattern that his tree doesnt changed
+                if pattern_id in not_changed_patterns_id:
+                    new_plan_nodes_to_nodes_map[plan_node] = node
+                    break
+        return new_plan_nodes_to_nodes_map
 
     def get_leaves(self):
         """
         Returns all leaves in this multi-pattern-tree.
         """
+
         leaves = set()
-        for output_node in self.__output_nodes:
+        for output_node in self.__id_to_output_node_map.values():
             leaves |= set(output_node.get_leaves())
         return leaves
 
@@ -61,7 +117,7 @@ class MultiPatternTree:
         Returns the matches from all of the output nodes.
         """
         matches = []
-        for output_node in self.__output_nodes:
+        for output_node in self.__id_to_output_node_map.values():
             while output_node.has_unreported_matches():
                 match = output_node.get_next_unreported_match()
                 pattern_ids = output_node.get_pattern_ids()
@@ -81,7 +137,7 @@ class MultiPatternTree:
         """
         This method is similar to the method- get_last_matches in a Tree.
         """
-        for output_node in self.__output_nodes:
+        for output_node in self.__id_to_output_node_map.values():
             if not isinstance(output_node, NegationNode):
                 continue
                 # this is the node that contains the pending matches
@@ -95,11 +151,5 @@ class MultiPatternTree:
     def get_specific_output_node(self, pattern: Pattern):
         return self.__id_to_output_node_map[pattern.id]
 
-    def __propagate_pattern_ids(self):
-        for pattern, tree_plan in self.pattern_to_tree_plan_map.items():
-            self.propagate_pattern_id(pattern.id, tree_plan)
-
-    @staticmethod
-    def propagate_pattern_id(pattern_id: int, tree_plan: TreePlan):
-        root = tree_plan.root
-        root.propagate_pattern_id(pattern_id)
+    def get_output_nodes(self, patterns_ids):
+        return [self.__id_to_output_node_map[pattern_id] for pattern_id in patterns_ids]
