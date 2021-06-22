@@ -90,8 +90,7 @@ class EvaluationMechanismFactory:
                                     runtime_statistics_collector)
         else:
             tree = Tree(list(pattern_to_tree_plan_map.values())[0],
-                        list(pattern_to_tree_plan_map)[0], eval_mechanism_params.storage_params,
-                        runtime_statistics_collector)
+                        list(pattern_to_tree_plan_map)[0], eval_mechanism_params.storage_params)
 
         return EvaluationMechanismFactory.__create_tree_based_evaluation_mechanism_by_update_type(tree,
                                                                                                   pattern_to_tree_plan_map,
