@@ -124,6 +124,9 @@ class Node(ABC):
         In case of UnsortedPatternMatchStorage the insertion is directly at the end, O(1).
         """
         self._partial_matches.add(pm)
+        self.propagate_partial_matches(pm)
+
+    def propagate_partial_matches(self, pm: PatternMatch):
         for parent in self._parents:
             self._parent_to_unhandled_queue_dict[parent].put(pm)
             parent.handle_new_partial_match(self)
