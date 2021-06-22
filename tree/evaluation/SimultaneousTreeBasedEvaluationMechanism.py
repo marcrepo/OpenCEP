@@ -8,21 +8,21 @@ from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from stream.Stream import OutputStream
 from tree.PatternMatchStorage import TreeStorageParameters
 from tree.Tree import Tree
-from tree.evaluation.TreeBasedEvaluationMechanism import TreeBasedEvaluationMechanism
+from tree.evaluation.SinglePatternTreeBasedEvaluationMechanism import SinglePatternTreeBasedEvaluationMechanism
 
 
-class SimultaneousTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
+class SimultaneousTreeBasedEvaluationMechanism(SinglePatternTreeBasedEvaluationMechanism):
     """
     Whenever a new tree is given,
     Runs the old tree and the new tree in parallel as long as the events affect the matches from the trees differently,
     after that, replaces the old tree with the new tree.
     """
-    def __init__(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
+    def __init__(self, tree,  pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                  storage_params: TreeStorageParameters,
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,
                  statistics_update_time_window: timedelta = None):
-        super().__init__(pattern_to_tree_plan_map, storage_params,
+        super().__init__(tree, pattern_to_tree_plan_map, storage_params,
                          statistics_collector,
                          optimizer,
                          statistics_update_time_window)
@@ -51,7 +51,7 @@ class SimultaneousTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
             return False
         return super()._should_try_reoptimize(last_statistics_refresh_time, last_event)
 
-    def _play_new_event_on_tree(self, event: Event, matches: OutputStream):
+    def _play_new_event_on_tree_aux(self, event: Event, matches: OutputStream):
         if self.__is_simultaneous_state:
             self.__play_new_event_on_new_tree(event, self.__new_event_types_listeners)
 

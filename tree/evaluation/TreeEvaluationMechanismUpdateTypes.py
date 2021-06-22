@@ -11,3 +11,6 @@ class TreeEvaluationMechanismUpdateTypes(Enum):
 
     # maintains both the old and the new tree simultaneously until the current window expires
     SIMULTANEOUS_TREE_EVALUATION = 1,
+
+    #
+    MULTI_PATTERN_TREE_EVALUATION = 2,
