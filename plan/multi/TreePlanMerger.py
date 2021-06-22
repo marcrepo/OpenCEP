@@ -9,7 +9,7 @@ class TreePlanMerger(ABC):
     """
     An abstract class for tree plan mergers utilizing various multi-pattern sharing techniques.
     """
-    def merge_tree_plans(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan]):
+    def merge_tree_plans(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan], known_unique_tree_plan_nodes):
         """
         Merges the given tree plans of individual tree plans into a global shared structure.
         """
