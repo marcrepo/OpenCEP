@@ -132,6 +132,9 @@ class AtomicCondition(Condition, ABC):
         """
         self._statistics_collector = statistics_collector
 
+    def get_statistics_collector(self):
+        return self._statistics_collector
+
 
 class TrueCondition(AtomicCondition):
     """
