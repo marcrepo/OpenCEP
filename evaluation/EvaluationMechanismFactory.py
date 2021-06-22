@@ -1,21 +1,18 @@
 from datetime import timedelta
 from typing import List, Dict
-
 from adaptive.optimizer.Optimizer import Optimizer
 from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from base.Pattern import Pattern
 from evaluation.EvaluationMechanismTypes import EvaluationMechanismTypes
 from misc import DefaultConfig
+from tree.MultiPatternTree import MultiPatternTree
+from tree.Tree import Tree
 from tree.evaluation.MultiPatternTreeBasedEvaluationMechanism import MultiPatternTreeBasedEvaluationMechanism
 from tree.evaluation.TreeEvaluationMechanismUpdateTypes import TreeEvaluationMechanismUpdateTypes
 from adaptive.optimizer.OptimizerFactory import OptimizerParameters, OptimizerFactory, \
     StatisticsDeviationAwareOptimizerParameters
 from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorFactory
-from plan.multi.ShareLeavesTreePlanMerger import ShareLeavesTreePlanMerger
-from plan.multi.SubTreeSharingTreePlanMerger import SubTreeSharingTreePlanMerger
 from plan.TreePlan import TreePlan
-from plan.TreePlanBuilderFactory import TreePlanBuilderFactory
-from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
 from tree.PatternMatchStorage import TreeStorageParameters
 from tree.evaluation.SimultaneousTreeBasedEvaluationMechanism import SimultaneousTreeBasedEvaluationMechanism
 from tree.evaluation.TrivialTreeBasedEvaluationMechnism import TrivialTreeBasedEvaluationMechanism
@@ -25,6 +22,7 @@ class EvaluationMechanismParameters:
     """
     Parameters required for evaluation mechanism creation.
     """
+
     def __init__(self, eval_mechanism_type: EvaluationMechanismTypes = DefaultConfig.DEFAULT_EVALUATION_MECHANISM_TYPE,
                  optimizer_params: OptimizerParameters = OptimizerParameters()):
         self.type = eval_mechanism_type
@@ -35,6 +33,7 @@ class TreeBasedEvaluationMechanismParameters(EvaluationMechanismParameters):
     """
     Parameters for the creation of a tree-based evaluation mechanism.
     """
+
     def __init__(self,
                  storage_params: TreeStorageParameters = TreeStorageParameters(),
                  optimizer_params: OptimizerParameters = StatisticsDeviationAwareOptimizerParameters(),
@@ -48,6 +47,7 @@ class EvaluationMechanismFactory:
     """
     Creates an evaluation mechanism given its specification.
     """
+
     @staticmethod
     def build_eval_mechanism(eval_mechanism_params: EvaluationMechanismParameters,
                              patterns: List[Pattern]):
@@ -70,39 +70,36 @@ class EvaluationMechanismFactory:
 
         optimizer_params = eval_mechanism_params.optimizer_params
         statistic_collector_params = optimizer_params.statistics_collector_params
+
         statistics_collector = StatisticsCollectorFactory.build_statistics_collector(statistic_collector_params,
                                                                                      patterns)
-        optimizer = OptimizerFactory.build_optimizer(eval_mechanism_params.optimizer_params, statistics_collector)
+        optimizer = OptimizerFactory.build_optimizer(eval_mechanism_params.optimizer_params, statistics_collector,
+                                                     patterns)
         cost_model_type = eval_mechanism_params.optimizer_params.tree_plan_params.cost_model_type
 
-        pattern_to_tree_plan_map = {pattern: optimizer.build_initial_plan(statistics_collector.get_specific_statistics(pattern),
-                                                                          cost_model_type, pattern)
-                                    for pattern in patterns}
+        pattern_to_tree_plan_map = optimizer.build_initial_pattern_to_tree_plan_map(patterns, cost_model_type)
+
         runtime_statistics_collector = statistics_collector if optimizer.is_adaptivity_enabled() else None
 
+        if runtime_statistics_collector is not None:
+            for pattern in pattern_to_tree_plan_map.keys():
+                pattern.condition.set_statistics_collector(runtime_statistics_collector)
+
         if len(patterns) > 1:
-            # a multi-pattern case - try to merge the tree plans
-            pattern_to_tree_plan_map = EvaluationMechanismFactory.__merge_tree_plans(
-                pattern_to_tree_plan_map, eval_mechanism_params.optimizer_params.tree_plan_params.tree_plan_merge_type)
+            tree = MultiPatternTree(pattern_to_tree_plan_map, eval_mechanism_params.storage_params,
+                                    runtime_statistics_collector)
+        else:
+            tree = Tree(list(pattern_to_tree_plan_map.values())[0],
+                        list(pattern_to_tree_plan_map)[0], eval_mechanism_params.storage_params,
+                        runtime_statistics_collector)
 
-        return EvaluationMechanismFactory.__create_tree_based_evaluation_mechanism_by_update_type(
-            pattern_to_tree_plan_map, eval_mechanism_params.storage_params, runtime_statistics_collector, optimizer,
-            optimizer_params.statistics_updates_time_window, eval_mechanism_params.tree_update_type)
-
-    @staticmethod
-    def __merge_tree_plans(pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
-                           tree_plan_merge_approach: MultiPatternTreePlanMergeApproaches):
-        """
-        Merges the given tree plans of individual tree plans into a global shared structure.
-        """
-        if tree_plan_merge_approach == MultiPatternTreePlanMergeApproaches.TREE_PLAN_TRIVIAL_SHARING_LEAVES:
-            return ShareLeavesTreePlanMerger().merge_tree_plans(pattern_to_tree_plan_map)
-        if tree_plan_merge_approach == MultiPatternTreePlanMergeApproaches.TREE_PLAN_SUBTREES_UNION:
-            return SubTreeSharingTreePlanMerger().merge_tree_plans(pattern_to_tree_plan_map)
-        if tree_plan_merge_approach == MultiPatternTreePlanMergeApproaches.TREE_PLAN_LOCAL_SEARCH:
-            # TODO: not yet implemented
-            pass
-        raise Exception("Unsupported multi-pattern merge algorithm %s" % (tree_plan_merge_approach,))
+        return EvaluationMechanismFactory.__create_tree_based_evaluation_mechanism_by_update_type(tree,
+                                                                                                  pattern_to_tree_plan_map,
+                                                                                                  eval_mechanism_params.storage_params,
+                                                                                                  runtime_statistics_collector,
+                                                                                                  optimizer,
+                                                                                                  optimizer_params.statistics_updates_time_window,
+                                                                                                  eval_mechanism_params.tree_update_type)
 
     @staticmethod
     def __create_default_eval_parameters():
@@ -114,7 +111,7 @@ class EvaluationMechanismFactory:
         raise Exception("Unknown evaluation mechanism type: %s" % (DefaultConfig.DEFAULT_EVALUATION_MECHANISM_TYPE,))
 
     @staticmethod
-    def __create_tree_based_evaluation_mechanism_by_update_type(pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
+    def __create_tree_based_evaluation_mechanism_by_update_type(tree, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                                                                 storage_params: TreeStorageParameters,
                                                                 statistics_collector: StatisticsCollector,
                                                                 optimizer: Optimizer,
@@ -124,21 +121,21 @@ class EvaluationMechanismFactory:
         Instantiates a tree-based evaluation mechanism given all the parameters.
         """
         if tree_update_type == TreeEvaluationMechanismUpdateTypes.TRIVIAL_TREE_EVALUATION:
-            return TrivialTreeBasedEvaluationMechanism(pattern_to_tree_plan_map,
+            return TrivialTreeBasedEvaluationMechanism(tree, pattern_to_tree_plan_map,
                                                        storage_params,
                                                        statistics_collector,
                                                        optimizer,
                                                        statistics_update_time_window)
 
         if tree_update_type == TreeEvaluationMechanismUpdateTypes.SIMULTANEOUS_TREE_EVALUATION:
-            return SimultaneousTreeBasedEvaluationMechanism(pattern_to_tree_plan_map,
+            return SimultaneousTreeBasedEvaluationMechanism(tree, pattern_to_tree_plan_map,
                                                             storage_params,
                                                             statistics_collector,
                                                             optimizer,
                                                             statistics_update_time_window)
 
         if tree_update_type == TreeEvaluationMechanismUpdateTypes.MULTI_PATTERN_TREE_EVALUATION:
-            return MultiPatternTreeBasedEvaluationMechanism(pattern_to_tree_plan_map,
+            return MultiPatternTreeBasedEvaluationMechanism(tree, pattern_to_tree_plan_map,
                                                             storage_params,
                                                             statistics_collector,
                                                             optimizer,
