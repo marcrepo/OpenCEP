@@ -66,34 +66,15 @@ from tree.nodes.SeqNode import *
 
 
 class MPG:
-    def __init__(self, patterns: Pattern or List[Pattern], pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
-                 initial_statistics, cost_model_type):
+    def __init__(self, patterns: Pattern or List[Pattern]):
         """
-        Hash tables representing the graph
+        This is the class representing a mapping between a patterns to its maximal common sub patterns
+        and the a mapping between maximal common sub pattern to the patterns which contains it.
         """
         self.patterns = patterns
-        self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
         self.mcs_to_patterns = {}
         self.pattern_to_various_mcs = {p: set() for p in patterns}
         self.__create_mpg(patterns if isinstance(patterns, List) else list(patterns))
-        # todo: remove this test function later
-        # self.algo_experiment(initial_statistics, cost_model_type)
-        # todo:
-        # this is the algorithm to find maximal common subpattern
-        self.sub_tree_merger = SubTreeSharingTreePlanMerger()
-
-    def algo_experiment1(self):
-        p0_left = Pattern(
-            SeqOperator(PrimitiveEventStructure("AAPL", "a"),
-                        PrimitiveEventStructure("CBRL", "d")),
-            AndCondition(),
-            timedelta(minutes=2))
-        po_right = Pattern(
-            SeqOperator(PrimitiveEventStructure("AMZN", "b"),
-                        PrimitiveEventStructure("AVID", "c")),
-            AndCondition(),
-            p0_left_tree=
-            timedelta(minutes=2))
 
     def __create_mpg(self, patterns):
         """i"""
@@ -124,83 +105,13 @@ class MPG:
         if self.__is_first_contained_in_args_of_second(p2, p1):
             return p2
 
-        # todo: continue here
-        if type(p1.full_structure) is type(p2.full_structure):
-            return self.__find_maximal_common_subpatterns_for_equal_operators(p1, p2)
+        return self.__find_maximal_common_subpatterns_helper(p1, p2)
 
-        if type(p1.full_structure) is not type(p2.full_structure):
-            return self.__find_maximal_common_subpatterns_for_different_operators(p1, p2)
-
-    """
-    #usally it is only one intersection, in seq could be both
-    structure_intersections = p1.full_structure.calc_initial_intersection(p2.full_structure)
-    maximal_common_subpatterns=[]
-    for structure in structure_intersections:
-        maximal_common_subpatterns.append(self.__find_maximal_common_subpatterns(structure,p1,p2))
-    return maximal_common_subpatterns
-    """  # todo: initial
 
     def remove_mcs_from_pattern(self, pattern, mcs):
         new_positive_structure = set(pattern.positive_structure)
         new_positive_structure.difference(mcs)
         pattern.positive_structure = list(new_positive_structure)
-
-    def __find_mcs_by_structure_intersection(self, structure_intersection, p1, p2):
-        p1_conditions = p1.condition.extract_atomic_conditions()
-        p2_conditions = p2.condition.extract_atomic_conditions()
-
-        # calc condition intersection
-        conditions_intersection = []
-        for cond1 in p1_conditions:
-            for cond2 in p2_conditions:
-                if cond1 == cond2:
-                    conditions_intersection.append(cond1)
-
-        # now we check the intersection reffere to same types
-        conditions_intersection_after_type_validation = conditions_intersection
-        for cond in conditions_intersection:
-            event_names = cond.get_event_names()
-            # just 2 names
-            for name in event_names:
-                p1_type = None
-                for arg in p1.full_structure.args:
-                    if arg.name == name:
-                        p1_type = arg.type
-
-                p2_type = None
-                for arg in p2.full_structure.args:
-                    if arg.name == name:
-                        p2_type = arg.type
-
-                if p1_type != p2_type:
-                    conditions_intersection_after_type_validation.remove(cond)
-                    break
-
-        mcs_condition = None
-        mcs_operator = None
-
-        # todo: switch case for all available conditions
-        if isinstance(p1.condition, AndCondition):
-            mcs_condition = AndCondition(*conditions_intersection_after_type_validation)
-
-        conditions_intersection_after_type_validation_names = set()
-        for cond in conditions_intersection_after_type_validation:
-            for name in cond.get_event_names():
-                conditions_intersection_after_type_validation_names.add(name)
-
-        structure_intersection_after_filtering_by_conditions = []
-        for event in structure_intersection:
-            if event.name in conditions_intersection_after_type_validation_names:
-                structure_intersection_after_filtering_by_conditions.append(event)
-
-        if isinstance(p1.full_structure, AndOperator):
-            mcs_operator = AndOperator()
-            for event in structure_intersection_after_filtering_by_conditions:
-                mcs_operator.args.append(event)
-
-        # todo: change p1.window to needed time_window later
-
-        return Pattern(mcs_operator, mcs_condition, timedelta(minutes=5))
 
     def __is_first_contained_in_args_of_second(self, p1: Pattern, p2: Pattern):
         """
@@ -210,12 +121,12 @@ class MPG:
         for arg in p2.full_structure.args:
             if type(arg) is PrimitiveEventStructure:
                 continue
-            if arg == p1.full_structure and self.__filter_arg_conditions_pattern_condtions(arg,
-                                                                                           p2_conditions) == p1.condition.get_conditions_list():
+            if arg == p1.full_structure and \
+                    self.__filter_arg_conditions_pattern_condtions(arg, p2_conditions) == p1.condition.get_conditions_list():
                 return True
         return False
 
-    def __find_maximal_common_subpatterns_for_equal_operators(self, p1: Pattern, p2: Pattern):
+    def __find_maximal_common_subpatterns_helper(self, p1: Pattern, p2: Pattern):
         """
         :return: maximal common subpattern for 2 equal operators
         """
@@ -223,11 +134,14 @@ class MPG:
         p1_events = set(p1.get_top_level_structure_args())
         p2_events = set(p2.get_top_level_structure_args())
         events_intersection = p1_events.intersection(p2_events)
-        events_intersection_names_set = set(event.name for event in events_intersection)
-        p1_event_conditions_filtered_by_intersection = p1.condition.get_condition_of(set(events_intersection_names_set),
+        events_intersection_names_set = set()
+        for event in events_intersection:
+            events_intersection_names_set = events_intersection_names_set.union(event.get_all_event_names())
+
+        p1_event_conditions_filtered_by_intersection = p1.condition.get_condition_of(events_intersection_names_set,
                                                                                      get_kleene_closure_conditions=False,
                                                                                      consume_returned_conditions=False).get_conditions_list()
-        p2_event_conditions_filtered_by_intersection = p2.condition.get_condition_of(set(events_intersection_names_set),
+        p2_event_conditions_filtered_by_intersection = p2.condition.get_condition_of(events_intersection_names_set,
                                                                                      get_kleene_closure_conditions=False,
                                                                                      consume_returned_conditions=False).get_conditions_list()
 
@@ -253,20 +167,21 @@ class MPG:
         """
         events_intersection_after_condition_filtering = copy.deepcopy(events_intersection)
         for event in events_intersection:
-            if event.name in p1_filtered_only_conditions_names or event.name in p2_filtered_only_conditions_names:
-                events_intersection_after_condition_filtering.remove(event)
-        pattern_to_return = copy.deepcopy(p1)
-        pattern_to_return.full_structure.args = list(events_intersection_after_condition_filtering)
-        pattern_to_return.positive_structure.args = list(events_intersection_after_condition_filtering)
-        return pattern_to_return
-
-    def __find_maximal_common_subpatterns_for_different_operators(self, p1: Pattern, p2: Pattern):
+           for name in event.get_all_event_names():
+                       if name in p1_filtered_only_conditions_names or name in p2_filtered_only_conditions_names:
+                            events_intersection_after_condition_filtering.remove(event)
+                            break
+        """ 
+                pattern_to_return = copy.deepcopy(p1)
+                pattern_to_return.full_structure.args = list(events_intersection_after_condition_filtering)
+                pattern_to_return.positive_structure.args = list(events_intersection_after_condition_filtering)
+                return pattern_to_return
         """
+        return frozenset(events_intersection_after_condition_filtering)
 
-        :param p1:
-        :param p2:
-        :return: maximal common subpatterns for 2 different operators
-        """
+
+
+
 
     def __filter_arg_conditions_pattern_condtions(self, arg, pattern_conditions):
         arg_names = set(arg.get_all_event_names())
@@ -344,7 +259,7 @@ class LocalSearchTreePlanMerger:
         self.initial_statistics = initial_statistics
         self.cost_model_type = cost_model_type
         self.start_date = datetime.now()
-        self.mpg = MPG(patterns, pattern_to_tree_plan_map, initial_statistics, cost_model_type)
+        self.mpg = MPG(patterns)
         if (len(local_search_params) < 2):
             raise Exception("local search: not enough parameters")
         self.heuristic = self.__set_heuristic(local_search_params[0])

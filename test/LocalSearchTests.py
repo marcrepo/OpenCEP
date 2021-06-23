@@ -12,6 +12,7 @@ from condition.CompositeCondition import AndCondition
 from condition.Condition import Variable
 from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
 from test.testUtils import *
+from plan.multi.LocalSearchTreePlanMerger import *
 
 currentPath = pathlib.Path(os.path.dirname(__file__))
 absolutePath = str(currentPath.parent)
@@ -35,22 +36,104 @@ sub_tree_sharing_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
                               tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
     storage_params=TreeStorageParameters(sort_storage=False, clean_up_interval=10, prioritize_sorting_by_timestamp=True))
 
+
 """ MPG(maximal common subpatterns graph) only tests """
-# seq(a,b,c,d), seq(b,a,d) ===> {b,d}
-def two_seq(createTestFile=False):
-    pattern1 = Pattern(
-        SeqOperator(PrimitiveEventStructure("AAPL", "aa"), PrimitiveEventStructure("AMZN", "am"),
+#todo comment: in mcs we dont care about the conditions
+
+def two_and_operator(createTestFile=False):
+    pattern0 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "aa"), PrimitiveEventStructure("AMZN", "am"),
                     PrimitiveEventStructure("AVID", "av"),PrimitiveEventStructure("CBRL", "cb")),
-        AndCondition(),
+        AndCondition(
+            GreaterThanCondition(Variable("aa", lambda x: x["Opening Price"]),
+                                 Variable("am", lambda x: x["Opening Price"])),
+            GreaterThanEqCondition(Variable("av", lambda x: x["Peak Price"]), 136)),
         timedelta(minutes=2)
     )
-    pattern2 = Pattern(
-        SeqOperator(PrimitiveEventStructure("AAPL", "aa"),
-                    PrimitiveEventStructure("CBRL", "cb"), PrimitiveEventStructure("CBRL", "g")),
-        AndCondition(),
+    pattern1 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "aa"), PrimitiveEventStructure("AMZN", "am"),
+                    PrimitiveEventStructure("AVID", "av"), PrimitiveEventStructure("CBRL", "gh")),
+        AndCondition(
+            GreaterThanCondition(Variable("aa", lambda x: x["Opening Price"]),
+                                 Variable("am", lambda x: x["Opening Price"])),
+            GreaterThanEqCondition(Variable("av", lambda x: x["Peak Price"]), 135)),
         timedelta(minutes=2)
     )
 
-    runTest("two_seq", [pattern1, pattern2], createTestFile, local_search_eval_mechanism_params,
-                events=nasdaqEventStreamTiny)
+    mpg = MPG(patterns=[pattern0, pattern1])
+    #mcs = should be AND(am, aa)
+    return True
+
+# SEQ(Z,OR(a,b),or(c,d)) AND(OR(a,b),Y,or(c,d)) ====> OR(a,b)
+def nested_OR(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "z"), OrOperator(PrimitiveEventStructure("AAPL", "a"),
+                    PrimitiveEventStructure("AAPL", "b")), OrOperator(PrimitiveEventStructure("AAPL", "c"),
+                    PrimitiveEventStructure("AAPL", "d"))),
+        AndCondition(GreaterThanEqCondition(Variable("z", lambda x: x["Peak Price"]), 135),
+                    GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),Variable("b", lambda x: x["Opening Price"])),
+                    GreaterThanCondition(Variable("c", lambda x: x["Opening Price"]), Variable("d", lambda x: x["Opening Price"]))
+                    ),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(OrOperator(PrimitiveEventStructure("AAPL", "a"),
+                    PrimitiveEventStructure("AAPL", "b")),PrimitiveEventStructure("AAPL", "y"),
+                    OrOperator(PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "d"))),
+        AndCondition(GreaterThanEqCondition(Variable("y", lambda x: x["Peak Price"]), 135),
+                     GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                          Variable("b", lambda x: x["Opening Price"])),
+                     SmallerThanCondition(Variable("c", lambda x: x["Opening Price"]),
+                                          Variable("d", lambda x: x["Opening Price"]))
+                     ),
+        timedelta(minutes=5)
+    )
+    mpg = MPG(patterns=[pattern0, pattern1])
+    # mcs = should be OR(a,b)
+    return True
+
+
+#todo: what is should return in order to ilyas response
+def seqABC_seqACB(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
+        AndCondition(GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 135)),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "b")),
+        AndCondition(GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 135)),
+        timedelta(minutes=2)
+    )
+
+    mpg = MPG(patterns=[pattern0, pattern1])
+    # mcs = should be ?
+    return True
+
+
+
+# we want to return the return mcs with no top level operator
+def one_pattern_inside_other(createTestFile=False):
+    pattern0 = Pattern(
+        AndOperator(SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "b")),
+                    PrimitiveEventStructure("BIDU", "d")),
+        AndCondition(
+            GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                 Variable("b", lambda x: x["Opening Price"])),
+            GreaterThanEqCondition(Variable("d", lambda x: x["Peak Price"]), 135)),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "b")),
+        AndCondition(
+            GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                 Variable("b", lambda x: x["Opening Price"]))),
+        timedelta(minutes=2)
+    )
+
+    mpg = MPG(patterns=[pattern0, pattern1])
+    # mcs = should be seq(a,b)
+    return True
+
+
 

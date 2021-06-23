@@ -29,7 +29,9 @@ hierarchyPatternSearchTest()
 duplicateEventTypeTest()
 
 # tree plan generation algorithms
-arrivalRatesPatternSearchTest()
+"""
+#arrivalRatesPatternSearchTest()
+"""
 nonFrequencyPatternSearchTest()
 frequencyPatternSearchTest()
 nonFrequencyPatternSearch2Test()
@@ -261,8 +263,10 @@ googleIncreasePatternSearchTest_8()
 amazonSpecificPatternSearchTest_8()
 googleAmazonLowPatternSearchTest_8()
 """
-two_seq()
-
+#two_and_operator()
+#seqABC_seqACB()
+#nested_OR()
+one_pattern_inside_other()
 
 # benchmarks
 if INCLUDE_BENCHMARKS:
