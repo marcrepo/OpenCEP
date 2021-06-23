@@ -14,11 +14,13 @@ class TreePlanBuilderParameters:
     def __init__(self, builder_type: TreePlanBuilderTypes = DefaultConfig.DEFAULT_TREE_PLAN_BUILDER,
                  cost_model_type: TreeCostModels = DefaultConfig.DEFAULT_TREE_COST_MODEL,
                  negation_algorithm_type: NegationAlgorithmTypes = DefaultConfig.DEFAULT_NEGATION_ALGORITHM,
-                 tree_plan_merger_type=DefaultConfig.DEFAULT_TREE_PLAN_MERGE):
+                 tree_plan_merger_type=DefaultConfig.DEFAULT_TREE_PLAN_MERGE,
+                 tree_plan_merger_params=None):
         self.builder_type = builder_type
         self.cost_model_type = cost_model_type
         self.negation_algorithm_type = negation_algorithm_type
         self.tree_plan_merge_type = tree_plan_merger_type
+        self.tree_plan_merger_params = tree_plan_merger_params
 
 
 class IterativeImprovementTreePlanBuilderParameters(TreePlanBuilderParameters):

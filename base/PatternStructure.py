@@ -52,13 +52,20 @@ class PrimitiveEventStructure(PatternStructure):
         return PrimitiveEventStructure(self.type, self.name)
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.name == other.name
+        return type(self) == type(other) and self.name == other.name and self.type == other.type
+
 
     def contains_event(self, event_name: str):
         return self.name == event_name
 
     def get_all_event_names(self):
         return [self.name]
+
+    def __hash__(self):
+        return hash((self.type, self.name))
+
+    def hash_objects(self):
+        return [self.type, self.name]
 
     def __repr__(self):
         return "%s %s" % (self.type, self.name)
@@ -103,6 +110,12 @@ class CompositeStructure(PatternStructure, ABC):
             if self.args[i] != other.args[i]:
                 return False
         return True
+
+    def __hash__(self):
+        hash_objects = []
+        for arg in self.args:
+            hash_objects.extend(arg.hash_objects())
+        return hash(frozenset(hash_objects))
 
     def contains_event(self, event_name: str):
         for arg in self.args:

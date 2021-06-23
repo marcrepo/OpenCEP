@@ -10,11 +10,12 @@ import test.EventProbabilityTests
 from test.NestedTests import *
 from test.UnitTests.test_storage import run_storage_tests
 from test.UnitTests.RuleTransformationTests import ruleTransformationTests
-
+from test.LocalSearchTests import*
 
 runTest.over_all_time = 0
 
 # basic functionality tests
+"""
 oneArgumentsearchTest()
 simplePatternSearchTest()
 googleAscendPatternSearchTest()
@@ -259,6 +260,8 @@ msftDrivRacePatternSearchTest_8()
 googleIncreasePatternSearchTest_8()
 amazonSpecificPatternSearchTest_8()
 googleAmazonLowPatternSearchTest_8()
+"""
+two_seq()
 
 
 # benchmarks

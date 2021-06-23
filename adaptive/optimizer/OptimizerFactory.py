@@ -17,7 +17,8 @@ class OptimizerParameters:
     def __init__(self, opt_type: OptimizerTypes = DefaultConfig.DEFAULT_OPTIMIZER_TYPE,
                  tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(),
                  statistics_collector_params: StatisticsCollectorParameters = StatisticsCollectorParameters(),
-                 statistics_updates_wait_time: timedelta = DefaultConfig.STATISTICS_UPDATES_WAIT_TIME):
+                 statistics_updates_wait_time: timedelta = DefaultConfig.STATISTICS_UPDATES_WAIT_TIME
+                 ):
         self.type = opt_type
         self.tree_plan_params = tree_plan_params
         self.statistics_collector_params = statistics_collector_params
