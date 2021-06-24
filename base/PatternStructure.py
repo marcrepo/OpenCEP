@@ -87,6 +87,12 @@ class UnaryStructure(PatternStructure, ABC):
     def get_all_event_names(self):
         return self.arg.get_all_event_names()
 
+    def calc_structure_intersections(self, other):
+        """
+        returns the structure intersections of the operator args
+        """
+        raise NotImplementedError()
+
 
 class CompositeStructure(PatternStructure, ABC):
     """
@@ -126,6 +132,12 @@ class CompositeStructure(PatternStructure, ABC):
     def get_all_event_names(self):
         return reduce(lambda x, y: x+y, [arg.get_all_event_names() for arg in self.args])
 
+    def calc_structure_intersections(self, other):
+        """
+        returns the structure intersections of the operator args
+        """
+        raise NotImplementedError()
+
 
 class AndOperator(CompositeStructure):
     def duplicate_top_operator(self):
@@ -133,6 +145,12 @@ class AndOperator(CompositeStructure):
 
     def __repr__(self):
         return "AND(%s)" % (self.args,)
+
+    def calc_structure_intersections(self, other):
+        self_events = set(self.args)
+        other_events = set(other.args)
+        events_intersection = self_events.intersection(other_events)
+        return [events_intersection]
 
 
 class OrOperator(CompositeStructure):
@@ -149,6 +167,37 @@ class SeqOperator(CompositeStructure):
 
     def __repr__(self):
         return "SEQ(%s)" % (self.args,)
+
+    def calc_structure_intersections(self, other):
+        """
+        Here could be return 2 structure intersections like in that case:
+        seq(a,b,c)
+        seq(a,c,b)  =====> seq(a,b) ,seq(a,c)
+        """
+        self_events = set(self.args)
+        other_events = set(other.args)
+        self_mutual_event_list = [arg for arg in self.args if arg in other_events]
+        other_mutual_event_list = [arg for arg in other.args if arg in self_events]
+        return [self.calc_structure_intersections_according_to_first(self_mutual_event_list, other_mutual_event_list),
+                self.calc_structure_intersections_according_to_first(other_mutual_event_list, self_mutual_event_list)]
+
+    def calc_structure_intersections_according_to_first(self, first_event_intersection, second_event_intersection):
+        """
+        calc the event intersection according to first events list.
+        """
+        second_idx = 0
+        second_len = len(second_event_intersection)
+        result = []
+        for event in first_event_intersection:
+            while second_idx < second_len and second_event_intersection[second_idx] != event:
+                second_idx += 1
+            if second_idx == second_len:
+                break
+            result.append(event)
+        return result
+
+
+
 
 
 class KleeneClosureOperator(UnaryStructure):

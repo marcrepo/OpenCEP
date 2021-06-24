@@ -64,6 +64,8 @@ def two_and_operator(createTestFile=False):
     #mcs = should be AND(am, aa)
     return True
 
+#todo comment: can use runStructuralTest for testing mpg only(i do not think i can use it directly)
+
 # SEQ(Z,OR(a,b),or(c,d)) AND(OR(a,b),Y,or(c,d)) ====> OR(a,b)
 def nested_OR(createTestFile=False):
     pattern0 = Pattern(
@@ -107,10 +109,24 @@ def seqABC_seqACB(createTestFile=False):
     )
 
     mpg = MPG(patterns=[pattern0, pattern1])
-    # mcs = should be ?
+    #2 mcs = seq(A,B), seq(A,C)
     return True
 
+def andABC_seqACB(createTestFile=False):
+    pattern0 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
+        AndCondition(GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 135)),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "b")),
+        AndCondition(GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 135)),
+        timedelta(minutes=2)
+    )
 
+    mpg = MPG(patterns=[pattern0, pattern1])
+    #mcs = None
+    return True
 
 # we want to return the return mcs with no top level operator
 def one_pattern_inside_other(createTestFile=False):

@@ -80,7 +80,7 @@ class MPG:
         """i"""
         for p1 in range(len(patterns)):
             for p2 in range(p1 + 1, len(patterns)):
-                maximal_common_subpatterns = [self.__find_maximal_common_subpatterns(p1, p2)]
+                maximal_common_subpatterns = self.__find_maximal_common_subpatterns(p1, p2)
                 # todo: make every mcs in the list not empty
                 for mcs in maximal_common_subpatterns:
                     self.pattern_to_various_mcs[patterns[p1]].add(mcs)
@@ -95,6 +95,9 @@ class MPG:
         """
         p1_idx, p2_idx: indices in patterns list
         :return:  maximal common subpatterns of pattern1 and pattern2
+        notes: There is no need to share between different operators because subtree sharing in that case will
+        always share leaves and thus we will prefer to keep each optimal pattern tree and still will be able to do the
+        leaf sharing.
         """
 
         p1 = self.patterns[p1_idx]
@@ -104,6 +107,9 @@ class MPG:
             return p1
         if self.__is_first_contained_in_args_of_second(p2, p1):
             return p2
+
+        if type(p1.full_structure) is not type(p2.full_structure):
+            return None
 
         return self.__find_maximal_common_subpatterns_helper(p1, p2)
 
@@ -126,14 +132,7 @@ class MPG:
                 return True
         return False
 
-    def __find_maximal_common_subpatterns_helper(self, p1: Pattern, p2: Pattern):
-        """
-        :return: maximal common subpattern for 2 equal operators
-        """
-        # todo: now funcionts work in case of not nested arguments
-        p1_events = set(p1.get_top_level_structure_args())
-        p2_events = set(p2.get_top_level_structure_args())
-        events_intersection = p1_events.intersection(p2_events)
+    def find_one_mcs_per_intersection(self, events_intersection, p1, p2):
         events_intersection_names_set = set()
         for event in events_intersection:
             events_intersection_names_set = events_intersection_names_set.union(event.get_all_event_names())
@@ -167,10 +166,10 @@ class MPG:
         """
         events_intersection_after_condition_filtering = copy.deepcopy(events_intersection)
         for event in events_intersection:
-           for name in event.get_all_event_names():
-                       if name in p1_filtered_only_conditions_names or name in p2_filtered_only_conditions_names:
-                            events_intersection_after_condition_filtering.remove(event)
-                            break
+            for name in event.get_all_event_names():
+                if name in p1_filtered_only_conditions_names or name in p2_filtered_only_conditions_names:
+                    events_intersection_after_condition_filtering.remove(event)
+                    break
         """ 
                 pattern_to_return = copy.deepcopy(p1)
                 pattern_to_return.full_structure.args = list(events_intersection_after_condition_filtering)
@@ -179,9 +178,18 @@ class MPG:
         """
         return frozenset(events_intersection_after_condition_filtering)
 
+    def __find_maximal_common_subpatterns_helper(self, p1: Pattern, p2: Pattern):
+        """
+        :return: maximal common subpattern for 2 equal operators
+        """
 
-
-
+        """
+        p1_events = set(p1.get_top_level_structure_args())
+        p2_events = set(p2.get_top_level_structure_args())
+        events_intersection = p1_events.intersection(p2_events)
+        """
+        events_intersections = p1.full_structure.calc_structure_intersections(p2.full_structure)
+        return [self.find_one_mcs_per_intersection(events_intersection,p1,p2) for events_intersection in events_intersections]
 
     def __filter_arg_conditions_pattern_condtions(self, arg, pattern_conditions):
         arg_names = set(arg.get_all_event_names())

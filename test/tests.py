@@ -48,7 +48,6 @@ iiRandomPatternSearchTest()
 iiRandom2PatternSearchTest()
 iiGreedyPatternSearchTest()
 iiGreedy2PatternSearchTest()
-
 zStreamOrdPatternSearchTest()
 zStreamPatternSearchTest()
 dpBPatternSearchTest()
@@ -66,7 +65,9 @@ structuralTest5()
 structuralTest6()
 
 # Kleene closure tests
-oneArgumentsearchTestKleeneClosure()
+"""
+#oneArgumentsearchTestKleeneClosure()
+"""
 MinMax_0_TestKleeneClosure()
 MinMax_1_TestKleeneClosure()
 MinMax_2_TestKleeneClosure()
@@ -85,7 +86,9 @@ KC_Condition_Failure_03()
 
 # negation tests
 simpleNotTest()
-multipleNotInTheMiddleTest()
+"""
+#multipleNotInTheMiddleTest()
+"""
 oneNotAtTheBeginningTest()
 multipleNotAtTheBeginningTest()
 oneNotAtTheEndTest()
@@ -178,7 +181,9 @@ dpLdNestedStructuralTest()
 dpBNestedPatternSearchTest()
 dpBNestedStructuralTest()
 dpLdNestedComplexStructuralTest()
-zstreamOrdNestedComplexStructuralTest()
+"""
+#zstreamOrdNestedComplexStructuralTest()
+"""
 KCNestedStructuralTest()
 
 
@@ -264,9 +269,11 @@ amazonSpecificPatternSearchTest_8()
 googleAmazonLowPatternSearchTest_8()
 """
 #two_and_operator()
-#seqABC_seqACB()
+seqABC_seqACB()
 #nested_OR()
-one_pattern_inside_other()
+#one_pattern_inside_other()
+andABC_seqACB()
+
 
 # benchmarks
 if INCLUDE_BENCHMARKS:
