@@ -21,13 +21,15 @@ class LeftDeepTreeBuilder(TreePlanBuilder):
     """
     An abstract class for left-deep tree builders.
     """
-    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode]):
+    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode], mcs=None):
         """
         Invokes an algorithm (to be implemented by subclasses) that builds an evaluation order of the operands, and
         converts it into a left-deep tree topology.
         """
         order = self._create_evaluation_order(pattern, statistics) if isinstance(pattern.positive_structure,
                                                                                  CompositeStructure) else [0]
+        #if pattern is full pattern change order according to mcs
+
         return LeftDeepTreeBuilder._order_to_tree_topology(order, pattern, leaves)
 
     @staticmethod

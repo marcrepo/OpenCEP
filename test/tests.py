@@ -269,10 +269,11 @@ amazonSpecificPatternSearchTest_8()
 googleAmazonLowPatternSearchTest_8()
 """
 #two_and_operator()
-seqABC_seqACB()
-#nested_OR()
+#seqABC_seqACB_MPG()
+#nested_And()
 #one_pattern_inside_other()
-andABC_seqACB()
+seqABC_seqACB()
+#andABC_seqACB()
 
 
 # benchmarks

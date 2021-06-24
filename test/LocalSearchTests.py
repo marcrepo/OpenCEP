@@ -67,7 +67,7 @@ def two_and_operator(createTestFile=False):
 #todo comment: can use runStructuralTest for testing mpg only(i do not think i can use it directly)
 
 # SEQ(Z,OR(a,b),or(c,d)) AND(OR(a,b),Y,or(c,d)) ====> OR(a,b)
-def nested_OR(createTestFile=False):
+def nested_OR_MPG(createTestFile=False):
     pattern0 = Pattern(
         SeqOperator(PrimitiveEventStructure("AAPL", "z"), OrOperator(PrimitiveEventStructure("AAPL", "a"),
                     PrimitiveEventStructure("AAPL", "b")), OrOperator(PrimitiveEventStructure("AAPL", "c"),
@@ -96,7 +96,7 @@ def nested_OR(createTestFile=False):
 
 
 #todo: what is should return in order to ilyas response
-def seqABC_seqACB(createTestFile=False):
+def seqABC_seqACB_MPG(createTestFile=False):
     pattern0 = Pattern(
         SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
         AndCondition(GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 135)),
@@ -152,4 +152,47 @@ def one_pattern_inside_other(createTestFile=False):
     return True
 
 
+"""
+full tests
+"""
 
+# SEQ(Z,OR(a,b),or(c,d)) AND(OR(a,b),Y,or(c,d)) ====> OR(a,b)
+def nested_And(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "z"), AndOperator(PrimitiveEventStructure("AAPL", "a"),
+                    PrimitiveEventStructure("AAPL", "b")), AndOperator(PrimitiveEventStructure("AAPL", "c"),
+                    PrimitiveEventStructure("AAPL", "d"))),
+        AndCondition(GreaterThanEqCondition(Variable("z", lambda x: x["Peak Price"]), 135),
+                    GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),Variable("b", lambda x: x["Opening Price"])),
+                    GreaterThanCondition(Variable("c", lambda x: x["Opening Price"]), Variable("d", lambda x: x["Opening Price"]))
+                    ),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(AndOperator(PrimitiveEventStructure("AAPL", "a"),
+                    PrimitiveEventStructure("AAPL", "b")),PrimitiveEventStructure("AAPL", "y"),
+                    AndOperator(PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "d"))),
+        AndCondition(GreaterThanEqCondition(Variable("y", lambda x: x["Peak Price"]), 135),
+                     GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                          Variable("b", lambda x: x["Opening Price"])),
+                     SmallerThanCondition(Variable("c", lambda x: x["Opening Price"]),
+                                          Variable("d", lambda x: x["Opening Price"]))
+                     ),
+        timedelta(minutes=5)
+    )
+
+    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params)
+
+def seqABC_seqACB(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "aa"), PrimitiveEventStructure("Amzn", "am"), PrimitiveEventStructure("AVID", "av")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "aa"), PrimitiveEventStructure("AVID", "av"), PrimitiveEventStructure("Amzn", "am")),
+        AndCondition(),
+        timedelta(minutes=2)
+    )
+
+    runTest("seqABC_seqACB", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params, events=nasdaqEventStreamTiny)

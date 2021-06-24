@@ -178,8 +178,10 @@ class SeqOperator(CompositeStructure):
         other_events = set(other.args)
         self_mutual_event_list = [arg for arg in self.args if arg in other_events]
         other_mutual_event_list = [arg for arg in other.args if arg in self_events]
-        return [self.calc_structure_intersections_according_to_first(self_mutual_event_list, other_mutual_event_list),
-                self.calc_structure_intersections_according_to_first(other_mutual_event_list, self_mutual_event_list)]
+        if self_mutual_event_list == other_mutual_event_list:
+            return [set(self_mutual_event_list)]
+        return [set(self.calc_structure_intersections_according_to_first(self_mutual_event_list, other_mutual_event_list)),
+                set(self.calc_structure_intersections_according_to_first(other_mutual_event_list, self_mutual_event_list))]
 
     def calc_structure_intersections_according_to_first(self, first_event_intersection, second_event_intersection):
         """

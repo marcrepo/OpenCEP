@@ -24,7 +24,7 @@ class TreePlanBuilder(ABC):
         self.__cost_model = TreeCostModelFactory.create_cost_model(cost_model_type)
         self.__negation_algorithm = NegationAlgorithmFactory.create_negation_algorithm(negation_algorithm_type)
 
-    def build_tree_plan(self, pattern: Pattern, statistics: Dict):
+    def build_tree_plan(self, pattern: Pattern, statistics: Dict,mcs=None):
         """
         Creates a tree-based evaluation plan for the given pattern.
         """
@@ -37,7 +37,7 @@ class TreePlanBuilder(ABC):
             positive_root = TreePlanBuilder.__adjust_nested_indices(pattern, nested_topology)
         else:
             # the pattern is entirely flat
-            positive_root = self._create_tree_topology(pattern, pattern_positive_statistics, self.__init_tree_leaves(pattern))
+            positive_root = self._create_tree_topology(pattern, pattern_positive_statistics, self.__init_tree_leaves(pattern),mcs)
         if isinstance(pattern.positive_structure, UnaryStructure):
             # an edge case where the topmost operator is a unary operator
             positive_root = self._instantiate_unary_node(pattern, positive_root)
