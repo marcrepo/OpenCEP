@@ -1,13 +1,15 @@
 from datetime import timedelta
-from typing import List
 
+from adaptive.optimizer.OptimizerBeforeCommit import StatisticsDeviationAwareOptimizer, InvariantsAwareOptimizer, \
+    TrivialOptimizer
 from adaptive.optimizer.OptimizerTypes import OptimizerTypes
 from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorParameters
-from base.Pattern import Pattern
 from misc import DefaultConfig
 from adaptive.statistics.StatisticsTypes import StatisticsTypes
 from adaptive.optimizer import Optimizer
+from adaptive.optimizer.MultiPatternStatisticsDeviationAwareOptimizer import \
+    MultiPatternStatisticsDeviationAwareOptimizer
 from adaptive.optimizer.DeviationAwareTesterFactory import DeviationAwareTesterFactory
 from plan.invariant.InvariantTreePlanBuilder import InvariantTreePlanBuilder
 from plan.TreePlanBuilderFactory import TreePlanBuilderParameters, TreePlanBuilderFactory
@@ -19,6 +21,7 @@ class OptimizerParameters:
     """
     Parameters required for optimizer creation.
     """
+
     def __init__(self, opt_type: OptimizerTypes = DefaultConfig.DEFAULT_OPTIMIZER_TYPE,
                  tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(),
                  statistics_collector_params: StatisticsCollectorParameters = StatisticsCollectorParameters(),
@@ -33,6 +36,7 @@ class TrivialOptimizerParameters(OptimizerParameters):
     """
     Parameters for the creation of the trivial optimizer class.
     """
+
     def __init__(self, tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(),
                  statistics_collector_params: StatisticsCollectorParameters = StatisticsCollectorParameters(),
                  statistics_updates_wait_time: timedelta = DefaultConfig.STATISTICS_UPDATES_WAIT_TIME):
@@ -44,6 +48,7 @@ class StatisticsDeviationAwareOptimizerParameters(OptimizerParameters):
     """
     Parameters for the creation of StatisticDeviationAwareOptimizer class.
     """
+
     def __init__(self, tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(),
                  statistics_collector_params: StatisticsCollectorParameters = StatisticsCollectorParameters(),
                  statistics_updates_wait_time: timedelta = DefaultConfig.STATISTICS_UPDATES_WAIT_TIME,
@@ -64,7 +69,8 @@ class MultiPatternStatisticsDeviationAwareOptimizerParameters(StatisticsDeviatio
     Parameters required for multi pattern optimizer creation.
     """
 
-    def __init__(self, tree_merger_params: TreePlanMergerParameters = TreePlanMergerParameters(), tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(),
+    def __init__(self, tree_merger_params: TreePlanMergerParameters = TreePlanMergerParameters(),
+                 tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(),
                  statistics_collector_params: StatisticsCollectorParameters = StatisticsCollectorParameters(),
                  statistics_updates_wait_time: timedelta = DefaultConfig.STATISTICS_UPDATES_WAIT_TIME,
                  deviation_threshold: float = DefaultConfig.DEVIATION_OPTIMIZER_THRESHOLD,
@@ -79,7 +85,9 @@ class InvariantsAwareOptimizerParameters(OptimizerParameters):
     """
     Parameters for the creation of InvariantsAwareOptimizer class.
     """
-    def __init__(self, tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(TreePlanBuilderTypes.INVARIANT_AWARE_GREEDY_LEFT_DEEP_TREE),
+
+    def __init__(self, tree_plan_params: TreePlanBuilderParameters = TreePlanBuilderParameters(
+        TreePlanBuilderTypes.INVARIANT_AWARE_GREEDY_LEFT_DEEP_TREE),
                  statistics_collector_params: StatisticsCollectorParameters = StatisticsCollectorParameters(),
                  statistics_updates_wait_time: timedelta = DefaultConfig.STATISTICS_UPDATES_WAIT_TIME):
         super().__init__(OptimizerTypes.INVARIANT_AWARE_OPTIMIZER, tree_plan_params,
@@ -90,6 +98,7 @@ class OptimizerFactory:
     """
     Creates an optimizer given its specification.
     """
+
     @staticmethod
     def build_optimizer(optimizer_parameters: OptimizerParameters, statistics_collector: StatisticsCollector, patterns):
         if optimizer_parameters is None:
@@ -97,11 +106,12 @@ class OptimizerFactory:
         return OptimizerFactory.__create_optimizer(optimizer_parameters, statistics_collector, patterns)
 
     @staticmethod
-    def __create_optimizer(optimizer_parameters: OptimizerParameters, statistics_collector: StatisticsCollector, patterns):
+    def __create_optimizer(optimizer_parameters: OptimizerParameters, statistics_collector: StatisticsCollector,
+                           patterns):
         tree_plan_builder = TreePlanBuilderFactory.create_tree_plan_builder(optimizer_parameters.tree_plan_params)
         is_adaptivity_enabled = optimizer_parameters.statistics_updates_time_window is not None
         if optimizer_parameters.type == OptimizerTypes.TRIVIAL_OPTIMIZER:
-            return Optimizer.TrivialOptimizer(patterns, tree_plan_builder, is_adaptivity_enabled, statistics_collector)
+            return TrivialOptimizer(patterns, tree_plan_builder, is_adaptivity_enabled, statistics_collector)
 
         if optimizer_parameters.type == OptimizerTypes.STATISTICS_DEVIATION_AWARE_OPTIMIZER:
             deviation_threshold = optimizer_parameters.deviation_threshold
@@ -114,21 +124,23 @@ class OptimizerFactory:
                 type_to_deviation_aware_tester_map[stat_type] = deviation_aware_tester
 
             if is_multi_pattern:
-                tree_plan_merger = TreePlanMergerFactory.create_tree_plan_merger(optimizer_parameters.tree_merger_params)
+                tree_plan_merger = TreePlanMergerFactory.create_tree_plan_merger(
+                    optimizer_parameters.tree_merger_params)
                 patterns_changed_threshold = optimizer_parameters.patterns_changed_threshold
-                return Optimizer.MultiPatternStatisticsDeviationAwareOptimizer(patterns, tree_plan_merger, tree_plan_builder,
-                                                                               is_adaptivity_enabled,
-                                                                               type_to_deviation_aware_tester_map,
-                                                                               statistics_collector,
-                                                                               patterns_changed_threshold)
+                return MultiPatternStatisticsDeviationAwareOptimizer(patterns, tree_plan_merger, tree_plan_builder,
+                                                                     is_adaptivity_enabled,
+                                                                     type_to_deviation_aware_tester_map,
+                                                                     statistics_collector,
+                                                                     patterns_changed_threshold)
             else:
-                return Optimizer.StatisticsDeviationAwareOptimizer(patterns, tree_plan_builder, is_adaptivity_enabled,
-                                                                   type_to_deviation_aware_tester_map,
-                                                                   statistics_collector)
+                return StatisticsDeviationAwareOptimizer(patterns, tree_plan_builder, is_adaptivity_enabled,
+                                                         type_to_deviation_aware_tester_map,
+                                                         statistics_collector)
 
         if optimizer_parameters.type == OptimizerTypes.INVARIANT_AWARE_OPTIMIZER:
             if isinstance(tree_plan_builder, InvariantTreePlanBuilder):
-                return Optimizer.InvariantsAwareOptimizer(patterns, tree_plan_builder, is_adaptivity_enabled, statistics_collector)
+                return InvariantsAwareOptimizer(patterns, tree_plan_builder, is_adaptivity_enabled,
+                                                statistics_collector)
             else:
                 raise Exception("Tree plan builder must be invariant aware")
 
