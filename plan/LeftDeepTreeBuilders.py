@@ -15,6 +15,7 @@ from base.Pattern import Pattern
 from misc.LegacyStatistics import MissingStatisticsException
 from adaptive.statistics.StatisticsTypes import StatisticsTypes
 from plan.negation.NegationAlgorithmTypes import NegationAlgorithmTypes
+from base.PatternStructure import*
 
 
 class LeftDeepTreeBuilder(TreePlanBuilder):
@@ -28,8 +29,21 @@ class LeftDeepTreeBuilder(TreePlanBuilder):
         """
         order = self._create_evaluation_order(pattern, statistics) if isinstance(pattern.positive_structure,
                                                                                  CompositeStructure) else [0]
-        #if pattern is full pattern change order according to mcs
+        if mcs:
+            if mcs[1] == pattern:
+                mcs_args = [arg for arg in mcs[0]]
+                #reordering algo
+                mcs_leaves_order = []
+                rest_of_pattern_leaves_order = []
+                for idx in order:
+                    if pattern.full_structure.args[idx] in mcs_args:
+                        mcs_leaves_order.append(idx)
+                    else:
+                        rest_of_pattern_leaves_order.append(idx)
+                order = mcs_leaves_order+rest_of_pattern_leaves_order
+                check=5
 
+                #todo: reordering algo
         return LeftDeepTreeBuilder._order_to_tree_topology(order, pattern, leaves)
 
     @staticmethod

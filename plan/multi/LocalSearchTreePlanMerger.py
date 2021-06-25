@@ -274,6 +274,7 @@ class LocalSearchTreePlanMerger:
         self.time_delta = self.__set_time_delta(local_search_params[1])
         self.optimizer = optimizer
         self.patterns = patterns
+        self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
 
     def __set_heuristic(self, heuristic):
         if heuristic == "TabuSearch":
@@ -301,9 +302,10 @@ class LocalSearchTreePlanMerger:
         # todo: now it is a test for creating a tree that starts with specific common subpattern
         mcs_es = self.mpg.pattern_to_various_mcs[self.patterns[0]]
         mcs = [i for i in mcs_es]
-        real_mcs = mcs[0]
-        self.optimizer.build_initial_plan(self.initial_statistics, self.cost_model_type, pattern=self.patterns[0],
+        real_mcs = [mcs[0],self.patterns[0]]
+        self.pattern_to_tree_plan_map[self.patterns[0]] = self.optimizer.build_initial_plan(self.initial_statistics, self.cost_model_type, pattern=self.patterns[0],
                                           mcs=real_mcs)
+        check = 4
 
         """
         #creating initial state: initial state is the state where no mcs is shared

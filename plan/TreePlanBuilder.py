@@ -33,7 +33,7 @@ class TreePlanBuilder(ABC):
         pattern_positive_statistics = TreePlanBuilder.extract_positive_statistics(pattern, statistics_copy)
         if any(not isinstance(arg, PrimitiveEventStructure) for arg in pattern_positive_args):
             # the pattern contains nested parts and should be treated accordingly
-            nested_topology, _ = self.__create_nested_topology(pattern, pattern_positive_statistics)
+            nested_topology, _ = self.__create_nested_topology(pattern, pattern_positive_statistics,mcs)
             positive_root = TreePlanBuilder.__adjust_nested_indices(pattern, nested_topology)
         else:
             # the pattern is entirely flat
@@ -153,7 +153,7 @@ class TreePlanBuilder(ABC):
             leaves.append(new_leaf)
         return leaves
 
-    def __create_nested_topology(self, pattern: Pattern, statistics: Dict):
+    def __create_nested_topology(self, pattern: Pattern, statistics: Dict,mcs=None):
         """
         A recursive method for creating a tree topology for the nested case.
         """
@@ -161,7 +161,7 @@ class TreePlanBuilder(ABC):
             self.__extract_nested_pattern(pattern, statistics)
         tree_topology = self._create_tree_topology(pattern, modified_statistics,
                                                    self.__init_tree_leaves(pattern, nested_topologies,
-                                                                           nested_args, nested_cost))
+                                                                           nested_args, nested_cost),mcs)
         return tree_topology, modified_statistics
 
     def _get_plan_cost(self, pattern: Pattern, plan: TreePlanNode, statistics: Dict):

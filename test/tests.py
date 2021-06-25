@@ -175,7 +175,9 @@ greedyNestedTest()
 greedyNestedStructuralTest()
 iiGreedyNestedPatternSearchTest()
 iiGreedyNestedStructuralTest()
-greedyNestedComplexStructuralTest()
+"""
+#greedyNestedComplexStructuralTest()
+"""
 dpLdNestedPatternSearchTest()
 dpLdNestedStructuralTest()
 dpBNestedPatternSearchTest()
@@ -270,9 +272,9 @@ googleAmazonLowPatternSearchTest_8()
 """
 #two_and_operator()
 #seqABC_seqACB_MPG()
-#nested_And()
+nested_And()
 #one_pattern_inside_other()
-seqABC_seqACB()
+#seqABC_seqACB()
 #andABC_seqACB()
 
 

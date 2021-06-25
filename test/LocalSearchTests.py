@@ -156,16 +156,18 @@ def one_pattern_inside_other(createTestFile=False):
 full tests
 """
 
-# SEQ(Z,OR(a,b),or(c,d)) AND(OR(a,b),Y,or(c,d)) ====> OR(a,b)
+# SEQ(Z,And(a,b),And(c,d)) AND(And(a,b),Y,And(c,d)) ====> And(a,b)
 def nested_And(createTestFile=False):
     pattern0 = Pattern(
         SeqOperator(PrimitiveEventStructure("AAPL", "z"), AndOperator(PrimitiveEventStructure("AAPL", "a"),
-                    PrimitiveEventStructure("AAPL", "b")), AndOperator(PrimitiveEventStructure("AAPL", "c"),
-                    PrimitiveEventStructure("AAPL", "d"))),
+                    PrimitiveEventStructure("AAPL", "b")),
+                    AndOperator(PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "d"))),
         AndCondition(GreaterThanEqCondition(Variable("z", lambda x: x["Peak Price"]), 135),
-                    GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),Variable("b", lambda x: x["Opening Price"])),
-                    GreaterThanCondition(Variable("c", lambda x: x["Opening Price"]), Variable("d", lambda x: x["Opening Price"]))
-                    ),
+                     GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                          Variable("b", lambda x: x["Opening Price"])),
+                     GreaterThanCondition(Variable("c", lambda x: x["Opening Price"]),
+                                          Variable("d", lambda x: x["Opening Price"]))
+                     ),
         timedelta(minutes=5)
     )
     pattern1 = Pattern(
@@ -181,7 +183,7 @@ def nested_And(createTestFile=False):
         timedelta(minutes=5)
     )
 
-    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params)
+    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params)
 
 def seqABC_seqACB(createTestFile=False):
     pattern0 = Pattern(
