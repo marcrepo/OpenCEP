@@ -1,23 +1,17 @@
-from abc import ABC
-from typing import Dict, Set, List
-
+from typing import Dict, Set
 from base.Pattern import Pattern
 from plan.TreePlan import TreePlan, TreePlanNode, TreePlanLeafNode, TreePlanNestedNode, TreePlanUnaryNode, \
     TreePlanBinaryNode
 from plan.multi.TreePlanMerger import TreePlanMerger
 
 
-class RecursiveTraversalTreePlanMerger(TreePlanMerger, ABC):
-
-    # def __init__(self, patterns: List[Pattern]):
-    #     self.pattern_to_intersection_patterns = {pattern: [] for pattern in patterns}
+class RecursiveTraversalTreePlanMerger(TreePlanMerger):
 
     """
     An abstract class for tree plan mergers functioning by recursively traversing the provided tree plans.
     """
 
     def merge_tree_plans(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan], known_unique_tree_plan_nodes):
-        # known_unique_tree_plan_nodes = set()
         merged_pattern_to_tree_plan_map = {}
         for pattern, tree_plan in pattern_to_tree_plan_map.items():
             merged_pattern_to_tree_plan_map[pattern] = TreePlan(self.traverse_tree_plan(tree_plan.root,
