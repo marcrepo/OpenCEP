@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from base import Pattern
 from misc import DefaultConfig
@@ -45,7 +46,7 @@ class Optimizer(ABC):
         """
         return self.__is_adaptivity_enabled
 
-    def build_initial_pattern_to_tree_plan_map(self, patterns, cost_model_type):
+    def build_initial_pattern_to_tree_plan_map(self, patterns: list, cost_model_type):
         pattern_to_tree_plan_map = {
             pattern: self.build_initial_plan(self._statistics_collector.get_specific_statistics(pattern),
                                              cost_model_type, pattern)

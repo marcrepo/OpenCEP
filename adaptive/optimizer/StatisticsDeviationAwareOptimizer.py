@@ -1,3 +1,5 @@
+from typing import List
+
 from adaptive.optimizer.Optimizer import Optimizer
 from base.Pattern import Pattern
 from plan.TreePlanBuilder import TreePlanBuilder
@@ -8,7 +10,7 @@ class StatisticsDeviationAwareOptimizer(Optimizer):
     Represents an optimizer that monitors statistics deviations from their latest observed values.
     """
 
-    def __init__(self, patterns, tree_plan_builder: TreePlanBuilder, is_adaptivity_enabled: bool,
+    def __init__(self, patterns: List[Pattern], tree_plan_builder: TreePlanBuilder, is_adaptivity_enabled: bool,
                  type_to_deviation_aware_functions_map: dict, statistics_collector):
         super().__init__(patterns, tree_plan_builder, is_adaptivity_enabled, statistics_collector)
         self._prev_statistics = {pattern: statistics_collector.get_specific_statistics(pattern) for pattern in patterns}

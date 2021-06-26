@@ -1,6 +1,5 @@
 from datetime import timedelta
 from typing import List
-
 from base.Pattern import Pattern
 from adaptive.statistics.StatisticsTypes import StatisticsTypes
 from adaptive.statistics.Statistics import SelectivityStatistics, ArrivalRatesStatistics

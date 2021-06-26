@@ -1,6 +1,7 @@
 from queue import Queue
+from typing import List
 
-from adaptive.optimizer.OptimizerBeforeCommit import StatisticsDeviationAwareOptimizer
+from adaptive.optimizer.StatisticsDeviationAwareOptimizer import StatisticsDeviationAwareOptimizer
 from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from base.Pattern import Pattern
 from plan.TreePlan import TreePlan, TreePlanNode, TreePlanLeafNode, TreePlanNestedNode, TreePlanUnaryNode, \
@@ -10,13 +11,12 @@ from plan.TreePlanBuilder import TreePlanBuilder
 
 class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOptimizer):
 
-    def __init__(self, patterns, recursive_traversal_tree_plan_merger, tree_plan_builder: TreePlanBuilder,
+    def __init__(self, patterns: List[Pattern], recursive_traversal_tree_plan_merger, tree_plan_builder: TreePlanBuilder,
                  is_adaptivity_enabled: bool,
                  type_to_deviation_aware_functions_map, statistics_collector: StatisticsCollector,
                  patterns_changed_threshold: float):
         super().__init__(patterns, tree_plan_builder, is_adaptivity_enabled, type_to_deviation_aware_functions_map,
                          statistics_collector)
-        self.__tree = None
         self.__connected_graph_to_pattern_ids_map = {}
         self.__pattern_id_to_connected_graph_map = {}
         self.__connected_graph_to_changed_patterns_number = {}
@@ -40,13 +40,13 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
             pattern = self.__pattern_id_to_pattern_map[pattern_id]
             changed_pattern_to_tree_plan_map[pattern] = self.__pattern_to_tree_plan_map[pattern]
 
+        # initialize for next time
         self.__pattern_was_changed = set()
-
         self.__init_connected_graph_map()
 
         return changed_pattern_to_tree_plan_map
 
-    def __optimize(self, pattern: Pattern, new_statistics):
+    def __optimize(self, pattern: Pattern, new_statistics: dict):
 
         if pattern.id in self.__pattern_was_changed:
             return
@@ -83,7 +83,8 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
             new_need_statistics = self._statistics_collector.get_specific_statistics(pattern_need_rebuild)
             self.__optimize(pattern_need_rebuild, new_need_statistics)
 
-    def __get_still_merged(self, tree_plan_node, pattern_ids_intersections, known_unique_tree_plan_nodes):
+    def __get_still_merged(self, tree_plan_node: TreePlanNode, pattern_ids_intersections: set,
+                           known_unique_tree_plan_nodes: dict):
         still_merge_with = set()
         for pattern_intersection_id in pattern_ids_intersections:
             is_merged = [False]
@@ -96,7 +97,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
 
         return still_merge_with
 
-    def __should_rebuild_connected_graph(self, connected_graph_id):
+    def __should_rebuild_connected_graph(self, connected_graph_id: int):
         number_patterns_was_changed = self.__connected_graph_to_changed_patterns_number[connected_graph_id]
         if number_patterns_was_changed > self.__patterns_changed_threshold * \
                 len(self.__connected_graph_to_pattern_ids_map[connected_graph_id]):
@@ -104,7 +105,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
             return True
         return False
 
-    def __save_known_unique_tree_plan_nodes(self, known_unique_tree_plan_nodes, pattern):
+    def __save_known_unique_tree_plan_nodes(self, known_unique_tree_plan_nodes: dict, pattern: Pattern):
         """
         If we will pass the threshold and rebuild all graph so we want save all the nodes of trees that
         was already build
@@ -112,7 +113,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         connected_graph = self.__pattern_id_to_connected_graph_map[pattern.id]
         self.__connected_graph_to_known_unique_tree_plan_nodes[connected_graph].union(known_unique_tree_plan_nodes)
 
-    def __rebuild_connected_graph(self, connected_graph_id):
+    def __rebuild_connected_graph(self, connected_graph_id: int):
         need_changed_pattern_to_tree_plan_map = {}
         for pattern_id in self.__connected_graph_to_pattern_ids_map[connected_graph_id]:
             if pattern_id not in self.__pattern_was_changed:
@@ -131,7 +132,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         for pattern, tree_plan in new_pattern_to_tree_plan_merge.items():
             self.__pattern_to_tree_plan_map[pattern] = tree_plan
 
-    def __find_intersections(self, pattern):
+    def __find_intersections(self, pattern: Pattern):
         tree_plan = self.__pattern_to_tree_plan_map[pattern]
         root = tree_plan.root
         pattern_ids_intersections = set()
@@ -140,7 +141,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         return pattern_ids_intersections, known_unique_tree_plan_nodes
 
     def __find_intersections_aux(self, current: TreePlanNode, known_unique_tree_plan_nodes: dict,
-                                 pattern_ids_intersections: set, pattern_id):
+                                 pattern_ids_intersections: set, pattern_id: int):
         """
         Recursively traverses a tree plan and attempts to merge it with previously traversed subtrees.
         """
@@ -178,7 +179,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
             return
         raise Exception("Unexpected node type: %s" % (type(current),))
 
-    def build_initial_pattern_to_tree_plan_map(self, patterns, cost_model_type):
+    def build_initial_pattern_to_tree_plan_map(self, patterns: list, cost_model_type):
         pattern_to_tree_plan_map = super().build_initial_pattern_to_tree_plan_map(patterns, cost_model_type)
 
         self.__pattern_to_tree_plan_map = \

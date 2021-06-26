@@ -10,6 +10,7 @@ class StatisticEventData:
     """
     A container class that contains the event type along with event timestamp
     """
+
     def __init__(self, timestamp: datetime, event_type: str):
         self.timestamp = timestamp
         self.event_type = event_type
@@ -40,7 +41,7 @@ class ArrivalRatesStatistics(Statistics):
     """
 
     def __init__(self, arrival_rates_time_window: timedelta, patterns: List[Pattern],
-                 predefined_statistics=None):
+                 predefined_statistics: dict):
         self.__arrival_rates_time_window = arrival_rates_time_window
         self.__events_arrival_time = []
         self.__event_type_to_arrival_rates = {}
@@ -94,7 +95,7 @@ class ArrivalRatesStatistics(Statistics):
 
         return copy.deepcopy(arrival_rates)
 
-    def __init_maps(self, patterns: List[Pattern], predefined_arrival_rates):
+    def __init_maps(self, patterns: List[Pattern], predefined_arrival_rates: dict):
         for pattern in patterns:
             primitive_events = pattern.get_primitive_events()
             # For reconstruction
@@ -116,8 +117,11 @@ class ArrivalRatesStatistics(Statistics):
 
 
 class SelectivityStatistics(Statistics):
+    """
+    Represents the selectivity statistics.
+    """
 
-    def __init__(self, patterns: List[Pattern], predefined_statistics=None):
+    def __init__(self, patterns: List[Pattern], predefined_statistics: dict):
         self.__atomic_condition_to_total_map = {}
         self.__atomic_condition_to_success_map = {}
         self.__pattern_to_selectivity_matrix_map = {}
@@ -186,7 +190,8 @@ class SelectivityStatistics(Statistics):
 
             for i in range(len(primitive_events)):
                 for j in range(i + 1):
-                    conditions = pattern.condition.get_condition_of({primitive_events[i].name, primitive_events[j].name})
+                    conditions = pattern.condition.get_condition_of(
+                        {primitive_events[i].name, primitive_events[j].name})
                     atomic_conditions = conditions.extract_atomic_conditions()
                     for atomic_condition in atomic_conditions:
                         if atomic_condition:
@@ -206,4 +211,3 @@ class SelectivityStatistics(Statistics):
                                 indices_to_atomic_condition_map[(i, j)] = [atomic_condition_id]
 
             self.__pattern_to_another_dict[pattern] = indices_to_atomic_condition_map
-

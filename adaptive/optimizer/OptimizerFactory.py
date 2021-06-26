@@ -1,13 +1,13 @@
 from datetime import timedelta
 
-from adaptive.optimizer.OptimizerBeforeCommit import StatisticsDeviationAwareOptimizer, InvariantsAwareOptimizer, \
-    TrivialOptimizer
+from adaptive.optimizer.StatisticsDeviationAwareOptimizer import StatisticsDeviationAwareOptimizer
+from adaptive.optimizer.TrivialOptimizer import TrivialOptimizer
+from adaptive.optimizer.InvariantsAwareOptimizer import InvariantsAwareOptimizer
 from adaptive.optimizer.OptimizerTypes import OptimizerTypes
 from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorParameters
 from misc import DefaultConfig
 from adaptive.statistics.StatisticsTypes import StatisticsTypes
-from adaptive.optimizer import Optimizer
 from adaptive.optimizer.MultiPatternStatisticsDeviationAwareOptimizer import \
     MultiPatternStatisticsDeviationAwareOptimizer
 from adaptive.optimizer.DeviationAwareTesterFactory import DeviationAwareTesterFactory
