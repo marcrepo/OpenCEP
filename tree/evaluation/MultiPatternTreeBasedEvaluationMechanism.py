@@ -60,9 +60,14 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
         """
         self._event_types_listeners = self._register_event_listeners(self._tree)
 
+        changed_output_nodes = self._tree.get_output_nodes(changed_patterns_ids)
+        self.__propagate_relevant_data(changed_output_nodes, changed_patterns_ids, old_leaves)
+
+        self.__flush_duplicate_matches(changed_output_nodes)
+
+    def __propagate_relevant_data(self, changed_output_nodes, changed_patterns_ids, old_leaves):
         not_changed_patterns = self.__all_patterns_ids - changed_patterns_ids
 
-        changed_output_nodes = self._tree.get_output_nodes(changed_patterns_ids)
         already_detect = set()
         leaves_need_save_their_events = set()
         new_event_types_listeners = {}
@@ -71,12 +76,16 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
             self.recursive_func(changed_output_node, not_changed_patterns, already_detect,
                                 leaves_need_save_their_events, new_event_types_listeners)
 
+        self.__propagate_events_from_new_leaves(leaves_need_save_their_events, old_leaves, new_event_types_listeners)
+
+    def __propagate_events_from_new_leaves(self, leaves_need_save_their_events, old_leaves, new_event_types_listeners):
         old_event_types = {old_leaf.get_event_type() for old_leaf in leaves_need_save_their_events}
         old_relevant_leaves = {leaf for leaf in old_leaves if leaf.get_event_type() in old_event_types}
         old_events = self._get_all_old_events(old_relevant_leaves)
 
         self._play_old_events_on_tree(old_events, new_event_types_listeners)
 
+    def __flush_duplicate_matches(self, changed_output_nodes):
         for changed_output_node in changed_output_nodes:
             for _ in self._tree.get_matches_from_output_node(changed_output_node):
                 pass
