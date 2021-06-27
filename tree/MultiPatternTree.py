@@ -26,9 +26,7 @@ class MultiPatternTree:
             self.__all_patterns_ids.add(pattern.id)
 
         self.__id_to_output_node_map = {}
-
         self.__storage_params = storage_params
-
         self.__plan_nodes_to_nodes_map = {}  # a cache for already created subtrees
 
         self.__construct_multi_pattern_tree(pattern_to_tree_plan_map)
@@ -69,7 +67,7 @@ class MultiPatternTree:
         #     new_tree_root = Tree(tree_plan, pattern, self.__storage_params, self.__plan_nodes_to_nodes_map).get_root()
         #     # print(self.f)
         #     self.__id_to_output_node_map[pattern.id] = new_tree_root
-        # print(self.f)
+        # # print(self.f)
 
         c = {pattern.id: pattern for pattern in pattern_to_tree_plan_map.keys()}
         patterns_id = [pattern.id for pattern in pattern_to_tree_plan_map.keys()]
@@ -77,7 +75,6 @@ class MultiPatternTree:
         b = [pattern_to_tree_plan_map[c[i]] for i in a]
 
         for i in range(len(a)):
-
             new_tree_root = Tree(b[i], c[a[i]], self.__storage_params, self.__plan_nodes_to_nodes_map).get_root()
             # print(self.f)
             self.__id_to_output_node_map[a[i]] = new_tree_root
@@ -112,25 +109,34 @@ class MultiPatternTree:
             return False
         return pattern.confidence is None or match.probability is None or match.probability >= pattern.confidence
 
+    def get_matches_from_output_node(self,  output_node):
+        """
+        Returns the matches from specific output nodes.
+        """
+        matches = []
+        while output_node.has_unreported_matches():
+            match = output_node.get_next_unreported_match()
+            pattern_ids = output_node.get_pattern_ids()
+            for pattern_id in pattern_ids:
+                if self.__id_to_output_node_map[pattern_id] != output_node:
+                    # the current output node is an internal node in pattern #idx, but not it's root.
+                    # we don't need to check if there are any matches for this pattern id.
+                    continue
+                # check if timestamp is correct for this pattern id.
+                # the pattern indices start from 1.
+                if self.__should_attach_match_to_pattern(match, self.__id_to_pattern_map[pattern_id]):
+                    match.add_pattern_id(pattern_id)
+            matches.append(match)
+
+        return matches
+
     def get_matches(self):
         """
         Returns the matches from all of the output nodes.
         """
         matches = []
         for output_node in self.__id_to_output_node_map.values():
-            while output_node.has_unreported_matches():
-                match = output_node.get_next_unreported_match()
-                pattern_ids = output_node.get_pattern_ids()
-                for pattern_id in pattern_ids:
-                    if self.__id_to_output_node_map[pattern_id] != output_node:
-                        # the current output node is an internal node in pattern #idx, but not it's root.
-                        # we don't need to check if there are any matches for this pattern id.
-                        continue
-                    # check if timestamp is correct for this pattern id.
-                    # the pattern indices start from 1.
-                    if self.__should_attach_match_to_pattern(match, self.__id_to_pattern_map[pattern_id]):
-                        match.add_pattern_id(pattern_id)
-                matches.append(match)
+            matches.extend(self.get_matches_from_output_node(output_node))
         return matches
 
     def get_last_matches(self):
@@ -153,3 +159,4 @@ class MultiPatternTree:
 
     def get_output_nodes(self, patterns_ids):
         return [self.__id_to_output_node_map[pattern_id] for pattern_id in patterns_ids]
+        # return {pattern_id: self.__id_to_output_node_map[pattern_id] for pattern_id in patterns_ids}

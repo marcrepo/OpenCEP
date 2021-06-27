@@ -128,10 +128,13 @@ class Node(ABC):
 
     def propagate_partial_matches(self, pm: PatternMatch):
         for parent in self._parents:
-            self._parent_to_unhandled_queue_dict[parent].put(pm)
-            parent.handle_new_partial_match(self)
+            self.propagate_partial_matches_to_parent(parent, pm)
         if self.is_output_node():
             self._unreported_matches.put(pm)
+
+    def propagate_partial_matches_to_parent(self, parent, pm):
+        self._parent_to_unhandled_queue_dict[parent].put(pm)
+        parent.handle_new_partial_match(self)
 
     def __can_add_partial_match(self, pm: PatternMatch) -> bool:
         """

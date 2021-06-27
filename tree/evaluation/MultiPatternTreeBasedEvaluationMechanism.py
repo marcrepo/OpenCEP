@@ -77,6 +77,10 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
 
         self._play_old_events_on_tree(old_events, new_event_types_listeners)
 
+        for changed_output_node in changed_output_nodes:
+            for _ in self._tree.get_matches_from_output_node(changed_output_node):
+                pass
+
     def _play_new_event_on_tree(self, event: Event, matches: OutputStream):
         self._play_new_event(event, self._event_types_listeners)
 
@@ -94,18 +98,23 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
         for match in self._tree.get_matches():
             matches.add_item(match)
 
-    def recursive_func(self, node: Node, not_changed_patterns, already_detect: set, leaves_need_save_their_events: set, new_event_types_listeners: dict):
+    def recursive_func(self, node: Node, not_changed_patterns, already_detect: set, leaves_need_save_their_events: set,
+                       new_event_types_listeners: dict):
 
         if node in already_detect:
             return
 
         already_detect.add(node)
 
-        pattens_ids = node.get_pattern_ids()
-        if not_changed_patterns.intersection(pattens_ids):
-            partial_matches = node.get_partial_matches()
-            for pm in partial_matches:
-                node.propagate_partial_matches(pm)
+        patterns_ids = node.get_pattern_ids()
+        if not_changed_patterns.intersection(patterns_ids):
+            for parent in node.get_parents():
+                parent_ids = parent.get_pattern_ids()
+                if not not_changed_patterns.intersection(parent_ids):
+                    # the parent node is new and not belong to not changed tree
+                    partial_matches = node.get_partial_matches()
+                    for pm in partial_matches:
+                        node.propagate_partial_matches_to_parent(parent, pm)
             return
 
         if isinstance(node, LeafNode):
