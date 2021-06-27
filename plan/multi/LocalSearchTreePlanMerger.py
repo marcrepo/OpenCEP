@@ -63,6 +63,7 @@ from condition.Condition import Variable
 from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
 from test.testUtils import *
 from tree.nodes.SeqNode import *
+from plan.TreeCostModel import *
 
 
 class MPG:
@@ -83,6 +84,8 @@ class MPG:
                 maximal_common_subpatterns = self.__find_maximal_common_subpatterns(p1, p2)
                 # todo: make every mcs in the list not empty
                 for mcs in maximal_common_subpatterns:
+                    if mcs == frozenset():
+                        break
                     self.pattern_to_various_mcs[patterns[p1]].add(mcs)
                     self.pattern_to_various_mcs[patterns[p2]].add(mcs)
                     if mcs in self.mcs_to_patterns.keys():
@@ -201,6 +204,8 @@ class MPG:
         statistics = copy.deepcopy(statistics)
 
 
+
+
 class SearchHeuristic(ABC):
     def __init__(self, neighborhood_func):
         self.neighborhood_func = neighborhood_func
@@ -231,29 +236,31 @@ class SimulatedAnnealing(SearchHeuristic):
         super().__init__(n_vertex)
 
 
-def n_vertex():
+def get_neighbor():
     """
-    :return: a_new_neighboor
-    """
-    # process:
-
+    :return: a_new_neighboor, chooses an mcs, # process:
     # choose v
     # choose mcs of v
     # lambda is a set of patterns of mcs
     # choose min(k, size of lambda) patterns to share
     # a is called to create a plan to each pattern when mcs is shared between all of them
+    """
+
 
     # notes: i want to create a state that was not before
 
+def get_neighbur
 
-class state:
-    def __init__(self):
-        self.cost = None
-        # this variable is a hash between each mcs that is shared inside the state to the patterns that are sharing it in the state
-        self.mcs_to_patterns_sharing = {}
+class solution:
+    def __init__(self, mcs_to_patterns_sharing, cost=None):
+        # a hash between each mcs that is shared inside the solution to the patterns that are sharing it in the solution
+        self.mcs_to_patterns_sharing = mcs_to_patterns_sharing
+        self.cost = cost
 
     def calc_state_cost(self):
-        pass
+
+
+
 
 
 class LocalSearchTreePlanMerger:
@@ -264,17 +271,32 @@ class LocalSearchTreePlanMerger:
     def __init__(self, patterns: Pattern or List[Pattern],
                  pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                  local_search_params: List, initial_statistics, cost_model_type, optimizer):
-        self.initial_statistics = initial_statistics
-        self.cost_model_type = cost_model_type
         self.start_date = datetime.now()
-        self.mpg = MPG(patterns)
         if (len(local_search_params) < 2):
             raise Exception("local search: not enough parameters")
+        #self.initial_statistics = initial_statistics
+        self.__cost_model = TreeCostModelFactory.create_cost_model(cost_model_type)
+        self.mpg = MPG(patterns)
+        self.pattern_to_tree_plan_cost_map = self.set_pattern_to_tree_plan_cost_map()
+
         self.heuristic = self.__set_heuristic(local_search_params[0])
         self.time_delta = self.__set_time_delta(local_search_params[1])
         self.optimizer = optimizer
         self.patterns = patterns
         self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
+        self.sub_tree_sharer = SubTreeSharingTreePlanMerger()
+
+        self.best_solution = solution(mcs_to_patterns_sharing={}, cost=sum(self.pattern_to_tree_plan_cost_map.values()))
+
+
+    def set_pattern_to_tree_plan_cost_map(self, pattern_to_tree_plan_map):
+        """
+        Returns a dictionary between pattern to its initial cost before local search starts to run.
+        """
+        #todo: implement the cost function in a way that if p0 and p1 sharing mcs a than the cost of the p0 will include
+        #todo: the mcs and of p1 won't - to write a good decomentaion for that
+        return {pattern: self.__cost_model.get_plan_cost(pattern, tree_plan, pattern.statistics)
+                for pattern, tree_plan in pattern_to_tree_plan_map.items()}
 
     def __set_heuristic(self, heuristic):
         if heuristic == "TabuSearch":
@@ -290,21 +312,28 @@ class LocalSearchTreePlanMerger:
             raise Exception("local search: time_delta is not instance of timeDelta class")
         return time_delta
 
-    def __create_pattern_to_tree_plan_map(self, best_state):
-        """returns pattern to tree plan map"""
-        pass
-
-    def __set_tree_plan_build_algo(self, algo):
-        """switch cases of possible algo choices"""
-        pass
+    def find_mcs_to_patterns_that_dont_share_it_in_solution(self, cur_solution_dict):
+        """
+        Returns a dictionary of mcs to patterns that contains them, a key,value of mcs:list[p1,p2,p3....]
+        iff for each pattern in the list its tree plan in the current solution does not starts with mcs
+        (we do not share the mcs in this pattern).
+        """
+        dict = {}
+        for solution_mcs,patterns_mcs in cur_solution_dict:
+            patterns_difference = self.mpg.mcs_to_patterns[solution_mcs]-patterns_mcs
+            if len(patterns_difference)>0:
+                dict[solution_mcs]=patterns_difference
+        return dict
 
     def merge_tree_plans(self):
-        # todo: now it is a test for creating a tree that starts with specific common subpattern
         mcs_es = self.mpg.pattern_to_various_mcs[self.patterns[0]]
         mcs = [i for i in mcs_es]
         real_mcs = [mcs[0],self.patterns[0]]
         self.pattern_to_tree_plan_map[self.patterns[0]] = self.optimizer.build_initial_plan(self.initial_statistics, self.cost_model_type, pattern=self.patterns[0],
                                           mcs=real_mcs)
+        for pattern in self.patterns:
+            print(self.cost_model_type.get_plan_cost(pattern, self.pattern_to_tree_plan_map[pattern], self.initial_statistics))
+        self.sub_tree_sharer.merge_tree_plans(self.pattern_to_tree_plan_map)
         check = 4
 
         """

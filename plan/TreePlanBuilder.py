@@ -120,7 +120,7 @@ class TreePlanBuilder(ABC):
         else:
             raise Exception("Illegal Root")
 
-    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode]):
+    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode],mcs=None):
         """
         An abstract method for creating the actual tree topology.
         This method works on the flat (not nested) case.

@@ -108,7 +108,7 @@ class SelectivityStatistics(Statistics):
             self.__selectivity_matrix = [[1.0 for _ in range(self.__args_len)] for _ in range(self.__args_len)]
         else:
             self.__selectivity_matrix = predefined_statistics
-
+        #todo comment: why we do init map in both cases
         self.__init_maps(pattern)
 
     def update(self, data):
@@ -157,6 +157,7 @@ class SelectivityStatistics(Statistics):
                     if atomic_condition:
                         atomic_condition_id = str(atomic_condition)
                         self.__relevant_indices.add((i, j))
+                        #todo comment: maybe here there is a problem
                         self.__atomic_condition_to_total_map[atomic_condition_id] = 0.0
                         self.__atomic_condition_to_success_map[atomic_condition_id] = 0.0
                         if (i, j) in self.__indices_to_atomic_condition_map:

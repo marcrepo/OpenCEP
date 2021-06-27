@@ -47,10 +47,13 @@ greedyPatternSearchTest()
 iiRandomPatternSearchTest()
 iiRandom2PatternSearchTest()
 iiGreedyPatternSearchTest()
-iiGreedy2PatternSearchTest()
+"""
+#iiGreedy2PatternSearchTest()
+"""
 zStreamOrdPatternSearchTest()
-zStreamPatternSearchTest()
-dpBPatternSearchTest()
+zStreamPatternSearchTest()"""
+#dpBPatternSearchTest()
+"""
 dpLdPatternSearchTest()
 
 nonFrequencyTailoredPatternSearchTest()
@@ -272,11 +275,12 @@ googleAmazonLowPatternSearchTest_8()
 """
 #two_and_operator()
 #seqABC_seqACB_MPG()
-nested_And()
+#nested_And()
 #one_pattern_inside_other()
 #seqABC_seqACB()
 #andABC_seqACB()
-
+#dpBPatternSearchTestTomCheck()
+local_search_test()
 
 # benchmarks
 if INCLUDE_BENCHMARKS:

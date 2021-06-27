@@ -13,6 +13,21 @@ from condition.Condition import Variable
 from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
 from test.testUtils import *
 from plan.multi.LocalSearchTreePlanMerger import *
+from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorParameters
+from misc.DefaultConfig import DEFAULT_TREE_COST_MODEL
+from plan.TreePlanBuilderFactory import IterativeImprovementTreePlanBuilderParameters
+from test.EvalTestsDefaults import DEFAULT_TESTING_STATISTICS_COLLECTOR_SELECTIVITY_AND_ARRIVAL_RATES_STATISTICS
+from test.testUtils import *
+from evaluation.EvaluationMechanismFactory import TreeBasedEvaluationMechanismParameters
+from adaptive.optimizer.OptimizerFactory import StatisticsDeviationAwareOptimizerParameters
+from plan.LeftDeepTreeBuilders import *
+from plan.BushyTreeBuilders import *
+from datetime import timedelta
+from condition.Condition import Variable, TrueCondition, BinaryCondition, SimpleCondition
+from condition.CompositeCondition import AndCondition
+from condition.BaseRelationCondition import GreaterThanCondition, SmallerThanCondition
+from base.PatternStructure import SeqOperator, PrimitiveEventStructure
+from base.Pattern import Pattern
 
 currentPath = pathlib.Path(os.path.dirname(__file__))
 absolutePath = str(currentPath.parent)
@@ -21,7 +36,7 @@ sys.path.append(absolutePath)
 local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,
                                          tree_plan_params=
-                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.TRIVIAL_LEFT_DEEP_TREE,
+                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.GREEDY_LEFT_DEEP_TREE,
                               cost_model_type=TreeCostModels.INTERMEDIATE_RESULTS_TREE_COST_MODEL,
                               tree_plan_merger_type=MultiPatternTreePlanMergeApproaches.TREE_PLAN_LOCAL_SEARCH,
                               tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
@@ -95,7 +110,7 @@ def nested_OR_MPG(createTestFile=False):
     return True
 
 
-#todo: what is should return in order to ilyas response
+
 def seqABC_seqACB_MPG(createTestFile=False):
     pattern0 = Pattern(
         SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
@@ -183,7 +198,7 @@ def nested_And(createTestFile=False):
         timedelta(minutes=5)
     )
 
-    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params)
+    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params)
 
 def seqABC_seqACB(createTestFile=False):
     pattern0 = Pattern(
@@ -198,3 +213,124 @@ def seqABC_seqACB(createTestFile=False):
     )
 
     runTest("seqABC_seqACB", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params, events=nasdaqEventStreamTiny)
+
+def dpBPatternSearchTestTomCheck(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("MSFT", "a"), PrimitiveEventStructure("DRIV", "b"),
+                    PrimitiveEventStructure("ORLY", "c"), PrimitiveEventStructure("CBRL", "d")),
+        AndCondition(
+            SmallerThanCondition(Variable("a", lambda x: x["Peak Price"]),
+                                 Variable("b", lambda x: x["Peak Price"])),
+            BinaryCondition(Variable("b", lambda x: x["Peak Price"]),
+                            Variable("c", lambda x: x["Peak Price"]),
+                            relation_op=lambda x, y: x < y),
+            SmallerThanCondition(Variable("c", lambda x: x["Peak Price"]),
+                                 Variable("d", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=3)
+    )
+    selectivityMatrix = [[1.0, 0.9457796098355941, 1.0, 1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0],
+                         [1.0, 0.15989723367389616, 1.0, 0.9992557393942864], [1.0, 1.0, 0.9992557393942864, 1.0]]
+    arrivalRates = [0.016597077244258872, 0.01454418928322895, 0.013917884481558803, 0.012421711899791231]
+    pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                            StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("MSFT", "a"), PrimitiveEventStructure("DRIV", "b"),
+                    PrimitiveEventStructure("ORLY", "c"), PrimitiveEventStructure("CBRL", "d")),
+        AndCondition(
+            SmallerThanCondition(Variable("a", lambda x: x["Peak Price"]),
+                                 Variable("b", lambda x: x["Peak Price"])),
+            BinaryCondition(Variable("b", lambda x: x["Peak Price"]),
+                            Variable("c", lambda x: x["Peak Price"]),
+                            relation_op=lambda x, y: x < y),
+            SmallerThanCondition(Variable("c", lambda x: x["Peak Price"]),
+                                 Variable("d", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=3)
+    )
+    selectivityMatrix1 = [[1.0, 0.9457796098355941, 1.0, 1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0],
+                         [1.0, 0.15989723367389616, 1.0, 0.9992557393942864], [1.0, 1.0, 0.9992557393942864, 1.0]]
+    arrivalRates1 = [0.5, 0.5, 0.5, 0.5]
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix1,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates1})
+
+
+
+    eval_params = TreeBasedEvaluationMechanismParameters(
+        optimizer_params=StatisticsDeviationAwareOptimizerParameters(
+            tree_plan_params=TreePlanBuilderParameters(TreePlanBuilderTypes.DYNAMIC_PROGRAMMING_BUSHY_TREE),
+            statistics_collector_params=StatisticsCollectorParameters(statistics_types=[StatisticsTypes.ARRIVAL_RATES, StatisticsTypes.SELECTIVITY_MATRIX])),
+        storage_params=DEFAULT_TESTING_EVALUATION_MECHANISM_SETTINGS.storage_params)
+
+    runMultiTest('dpB1', [pattern0, pattern1], createTestFile, eval_mechanism_params=eval_params, events=nasdaqEventStream)
+
+#todo: support negative and other operators
+
+
+def local_search_test(createTestFile=False):
+    patternA1 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
+        AndCondition(
+            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 135),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=5)
+    )
+    patternA2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
+        AndCondition(
+            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 136),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=2)
+    )
+    patternA3 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"),
+                    PrimitiveEventStructure("AAPL", "c")),
+        AndCondition(
+            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 137),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=5)
+    )
+
+    #first neighbor ends
+
+    patternB1 = Pattern(
+        AndOperator(PrimitiveEventStructure("AMZN", "a"), PrimitiveEventStructure("AMZN", "b"),
+                    PrimitiveEventStructure("AMZN", "c")),
+        AndCondition(
+            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 136),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=2)
+    )
+
+    patternB2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AMZN", "a"), PrimitiveEventStructure("AMZN", "b"),
+                    PrimitiveEventStructure("AMZN", "c")),
+        AndCondition(
+            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 137),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=2)
+    )
+
+    #second neighbor ends
+
+    #now we chose one of the above neighbors
+
+    #iteration one finished
+
+    #now we do another iteration to try to share onther mcs
+
+    #finish second iteration and return best sharing plan
+
+    runMultiTest("tom-test", [patternA1, patternA2, patternA3, patternB1, patternB2], createTestFile, local_search_eval_mechanism_params,
+                 expected_file_name="DifferentTimeStamp")
