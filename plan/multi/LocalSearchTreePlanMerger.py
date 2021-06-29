@@ -218,7 +218,7 @@ class SearchHeuristic(ABC):
 class TabuSearch(SearchHeuristic):
     # Tabu search stop if all neighbors are more expensive than current state
     def __init__(self, tabu_list_capacity=1000, neighbors_num_per_iteration=100):
-        super().__init__(n_vertex)
+        super().__init__(None)
         self.tabu_list_capacity = tabu_list_capacity
         self.neighbors_num_per_iteration = neighbors_num_per_iteration
         self.tabu_list = []
@@ -233,7 +233,7 @@ class TabuSearch(SearchHeuristic):
 
 class SimulatedAnnealing(SearchHeuristic):
     def __init__(self):
-        super().__init__(n_vertex)
+        super().__init__(None)
 
 
 def get_neighbor():
@@ -249,7 +249,8 @@ def get_neighbor():
 
     # notes: i want to create a state that was not before
 
-def get_neighbur
+def get_neighbur():
+    pass
 
 class solution:
     def __init__(self, mcs_to_patterns_sharing, cost=None):
@@ -258,6 +259,7 @@ class solution:
         self.cost = cost
 
     def calc_state_cost(self):
+        pass
 
 
 
@@ -274,17 +276,64 @@ class LocalSearchTreePlanMerger:
         self.start_date = datetime.now()
         if (len(local_search_params) < 2):
             raise Exception("local search: not enough parameters")
-        #self.initial_statistics = initial_statistics
+        self.initial_statistics = initial_statistics
         self.__cost_model = TreeCostModelFactory.create_cost_model(cost_model_type)
+        self.cost_model_type = cost_model_type
         self.mpg = MPG(patterns)
-        self.pattern_to_tree_plan_cost_map = self.set_pattern_to_tree_plan_cost_map()
-
-        self.heuristic = self.__set_heuristic(local_search_params[0])
-        self.time_delta = self.__set_time_delta(local_search_params[1])
-        self.optimizer = optimizer
         self.patterns = patterns
         self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
         self.sub_tree_sharer = SubTreeSharingTreePlanMerger()
+        self.optimizer = optimizer
+        #todo: delete experiment later
+
+        mcs_es = self.mpg.pattern_to_various_mcs[self.patterns[0]]
+        mcs = [i for i in mcs_es]
+        real_mcs = [mcs[0], self.patterns[0]]
+        self.pattern_to_tree_plan_map[self.patterns[0]] = self.optimizer.build_initial_plan(self.initial_statistics,
+                                                                                            self.cost_model_type,
+                                                                                            pattern=self.patterns[0],
+                                                                                            mcs=real_mcs)
+
+        self.pattern_to_tree_plan_map[self.patterns[1]] = self.optimizer.build_initial_plan(self.initial_statistics,
+                                                                                            self.cost_model_type,
+                                                                                            pattern=self.patterns[1],
+                                                                                            mcs=real_mcs)
+
+
+        p0_old_cost = self.__cost_model.get_plan_cost(self.patterns[0], self.pattern_to_tree_plan_map[self.patterns[0]].root, self.patterns[0].statistics)
+        p1_old_cost = self.__cost_model.get_plan_cost(self.patterns[1], self.pattern_to_tree_plan_map[self.patterns[1]].root, self.patterns[1].statistics)
+
+        self.sub_tree_sharer.merge_tree_plans(self.pattern_to_tree_plan_map)
+
+
+
+        for pattern in self.patterns:
+            print(self.cost_model_type.get_plan_cost(pattern, self.pattern_to_tree_plan_map[pattern],
+                                                     self.initial_statistics))
+        self.sub_tree_sharer.merge_tree_plans(self.pattern_to_tree_plan_map)
+        check = 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #todo: delete experiment above later
+        self.pattern_to_tree_plan_cost_map = self.set_pattern_to_tree_plan_cost_map()
+        self.heuristic = self.__set_heuristic(local_search_params[0])
+        self.time_delta = self.__set_time_delta(local_search_params[1])
+
+
 
         self.best_solution = solution(mcs_to_patterns_sharing={}, cost=sum(self.pattern_to_tree_plan_cost_map.values()))
 

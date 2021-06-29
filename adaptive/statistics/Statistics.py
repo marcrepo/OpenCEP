@@ -107,7 +107,7 @@ class SelectivityStatistics(Statistics):
         if not predefined_statistics:
             self.__selectivity_matrix = [[1.0 for _ in range(self.__args_len)] for _ in range(self.__args_len)]
         else:
-            self.__selectivity_matrix = predefined_statistics
+            self.__selectivity_matrix = copy.deepcopy(predefined_statistics)
         #todo comment: why we do init map in both cases
         self.__init_maps(pattern)
 

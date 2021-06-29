@@ -26,6 +26,7 @@ class TreePlanNode(ABC):
     """
     def __init__(self, condition: CompositeCondition = AndCondition()):
         self.condition = condition
+        self.cost_calculation_information = None
 
     def get_event_names(self):
         """

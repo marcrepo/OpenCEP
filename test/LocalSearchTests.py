@@ -198,7 +198,52 @@ def nested_And(createTestFile=False):
         timedelta(minutes=5)
     )
 
-    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params)
+    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params)
+
+
+def new_cost_machnizem(createTestFile=False):
+    # SEQ(Z,And(a,b),And(c,d)) y,AND(And(a,b),And(c,d)) ====> And(a,b)
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "z"), AndOperator(PrimitiveEventStructure("AAPL", "a"),
+                    PrimitiveEventStructure("AAPL", "b")),
+                    AndOperator(PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "d"))),
+        AndCondition(GreaterThanEqCondition(Variable("z", lambda x: x["Peak Price"]), 135),
+                     GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                          Variable("b", lambda x: x["Opening Price"])),
+                     GreaterThanCondition(Variable("c", lambda x: x["Opening Price"]),
+                                          Variable("d", lambda x: x["Opening Price"]))
+                     ),
+        timedelta(minutes=5)
+    )
+    selectivityMatrix = [[0.8, 0.6, 1.0, 1.0,1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0,1.0],
+                         [1.0, 0.15989723367389616, 1.0, 0.9992557393942864,1.0], [1.0, 1.0, 0.9992557393942864, 1.0,1.0],
+                         [0.8, 0.6, 1.0, 1.0,1.0]]
+    arrivalRates = [0.8, 0.2, 0.2, 0.2,0.2]
+    pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "y"),AndOperator(PrimitiveEventStructure("AAPL", "a"),
+                    PrimitiveEventStructure("AAPL", "b")),
+                    AndOperator(PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "d"))),
+        AndCondition(GreaterThanEqCondition(Variable("y", lambda x: x["Peak Price"]), 135),
+                     GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                          Variable("b", lambda x: x["Opening Price"])),
+                     SmallerThanCondition(Variable("c", lambda x: x["Opening Price"]),
+                                          Variable("d", lambda x: x["Opening Price"]))
+                     ),
+        timedelta(minutes=5)
+    )
+
+    selectivityMatrix = [[0.9, 0.6, 1.0, 1.0, 1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0, 1.0],
+                         [1.0, 0.15989723367389616, 1.0, 0.9992557393942864, 1.0],
+                         [1.0, 1.0, 0.9992557393942864, 1.0, 1.0],[0.9, 0.6, 1.0, 1.0, 1.0]]
+    arrivalRates = [0.9, 0.3, 0.3, 0.3,0.3]
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params)
+
 
 def seqABC_seqACB(createTestFile=False):
     pattern0 = Pattern(
@@ -229,7 +274,7 @@ def dpBPatternSearchTestTomCheck(createTestFile=False):
         ),
         timedelta(minutes=3)
     )
-    selectivityMatrix = [[1.0, 0.9457796098355941, 1.0, 1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0],
+    selectivityMatrix = [[1.0, 0.6, 1.0, 1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0],
                          [1.0, 0.15989723367389616, 1.0, 0.9992557393942864], [1.0, 1.0, 0.9992557393942864, 1.0]]
     arrivalRates = [0.016597077244258872, 0.01454418928322895, 0.013917884481558803, 0.012421711899791231]
     pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
@@ -249,7 +294,7 @@ def dpBPatternSearchTestTomCheck(createTestFile=False):
         ),
         timedelta(minutes=3)
     )
-    selectivityMatrix1 = [[1.0, 0.9457796098355941, 1.0, 1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0],
+    selectivityMatrix1 = [[1.0, 0.7, 1.0, 1.0], [0.9457796098355941, 1.0, 0.15989723367389616, 1.0],
                          [1.0, 0.15989723367389616, 1.0, 0.9992557393942864], [1.0, 1.0, 0.9992557393942864, 1.0]]
     arrivalRates1 = [0.5, 0.5, 0.5, 0.5]
     pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix1,
@@ -263,7 +308,7 @@ def dpBPatternSearchTestTomCheck(createTestFile=False):
             statistics_collector_params=StatisticsCollectorParameters(statistics_types=[StatisticsTypes.ARRIVAL_RATES, StatisticsTypes.SELECTIVITY_MATRIX])),
         storage_params=DEFAULT_TESTING_EVALUATION_MECHANISM_SETTINGS.storage_params)
 
-    runMultiTest('dpB1', [pattern0, pattern1], createTestFile, eval_mechanism_params=eval_params, events=nasdaqEventStream)
+    runMultiTest('dpBPatternSearchTestTomCheck', [pattern0, pattern1], createTestFile, eval_mechanism_params=eval_params, events=nasdaqEventStream)
 
 #todo: support negative and other operators
 

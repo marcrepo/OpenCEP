@@ -280,8 +280,8 @@ googleAmazonLowPatternSearchTest_8()
 #seqABC_seqACB()
 #andABC_seqACB()
 #dpBPatternSearchTestTomCheck()
-local_search_test()
-
+#local_search_test()
+new_cost_machnizem()
 # benchmarks
 if INCLUDE_BENCHMARKS:
     sortedStorageBenchMarkTest()

@@ -41,7 +41,7 @@ class LeftDeepTreeBuilder(TreePlanBuilder):
                     else:
                         rest_of_pattern_leaves_order.append(idx)
                 order = mcs_leaves_order+rest_of_pattern_leaves_order
-                check=5
+
 
                 #todo: reordering algo
         return LeftDeepTreeBuilder._order_to_tree_topology(order, pattern, leaves)
