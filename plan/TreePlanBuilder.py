@@ -141,7 +141,7 @@ class TreePlanBuilder(ABC):
             if nested_topologies is None or nested_topologies[i] is None:
                 # the current argument can either be a PrimitiveEventStructure or an UnaryOperator surrounding it
                 event_structure = arg if isinstance(arg, PrimitiveEventStructure) else arg.child
-                new_leaf = TreePlanLeafNode(i, event_structure.type, event_structure.name)
+                new_leaf = TreePlanLeafNode(i, event_structure.type, event_structure.name,None)
             else:
                 nested_topology = nested_topologies[i].sub_tree_plan \
                     if isinstance(nested_topologies[i], TreePlanNestedNode) else nested_topologies[i]
@@ -154,6 +154,17 @@ class TreePlanBuilder(ABC):
         return leaves
 
     def __create_nested_topology(self, pattern: Pattern, statistics: Dict,mcs=None):
+        """
+        A recursive method for creating a tree topology for the nested case.
+        """
+        pattern, modified_statistics, nested_topologies, nested_args, nested_cost = \
+            self.__extract_nested_pattern(pattern, statistics)
+        tree_topology = self._create_tree_topology(pattern, modified_statistics,
+                                                   self.__init_tree_leaves(pattern, nested_topologies,
+                                                                           nested_args, nested_cost),mcs)
+        return tree_topology, modified_statistics
+
+    def create_nested_topology(self, pattern: Pattern, statistics: Dict,mcs=None):
         """
         A recursive method for creating a tree topology for the nested case.
         """

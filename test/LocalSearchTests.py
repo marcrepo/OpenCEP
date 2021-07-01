@@ -171,7 +171,7 @@ def one_pattern_inside_other(createTestFile=False):
 full tests
 """
 
-# SEQ(Z,And(a,b),And(c,d)) AND(And(a,b),Y,And(c,d)) ====> And(a,b)
+# SEQ(Z,And(a,b),And(c,d)) SEQ(And(a,b),Y,And(c,d)) ====> And(a,b)
 def nested_And(createTestFile=False):
     pattern0 = Pattern(
         SeqOperator(PrimitiveEventStructure("AAPL", "z"), AndOperator(PrimitiveEventStructure("AAPL", "a"),
@@ -198,7 +198,42 @@ def nested_And(createTestFile=False):
         timedelta(minutes=5)
     )
 
-    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params)
+    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params)
+
+def seq_resarch_nested(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("DRIV", "x"), AndOperator(PrimitiveEventStructure("ORLY", "a"),
+                    PrimitiveEventStructure("ORLY", "b")),
+                    AndOperator(PrimitiveEventStructure("CBRL", "c"), PrimitiveEventStructure("CBRL", "d")), PrimitiveEventStructure("MSFT", "y")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+
+    pattern0_with_mcs = Pattern(
+        SeqOperator(AndOperator(PrimitiveEventStructure("ORLY", "a"),
+                    PrimitiveEventStructure("ORLY", "b")),
+                    AndOperator(PrimitiveEventStructure("CBRL", "c"), PrimitiveEventStructure("CBRL", "d")),SeqOperator(PrimitiveEventStructure("DRIV", "x"),PrimitiveEventStructure("MSFT", "y"))),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+
+
+    runMultiTest("nested_And", [pattern0, pattern0_with_mcs], createTestFile, sub_tree_sharing_eval_mechanism_params, eventStream= nasdaqEventStreamMedium)
+
+def seq_resarch(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "b"), PrimitiveEventStructure("AVID", "c")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AVID", "c")),
+                    PrimitiveEventStructure("AMZN", "b")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+
+    runMultiTest("seq_resarch", [pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params,eventStream= nasdaqEventStreamTiny)
 
 
 def new_cost_machnizem(createTestFile=False):
