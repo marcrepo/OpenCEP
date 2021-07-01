@@ -21,7 +21,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         self.__pattern_id_to_connected_graph_map = {}
         self.__connected_graph_to_changed_patterns_number = {}
         self.__recursive_traversal_tree_plan_merger = recursive_traversal_tree_plan_merger
-        self.__pattern_was_changed = set()
+        self.__changed_patterns = set()
         self.__pattern_to_tree_plan_map = None
         self.__pattern_id_to_pattern_map = None
         self.__patterns_changed_threshold = patterns_changed_threshold
@@ -30,25 +30,25 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
     def try_optimize(self):
         changed_pattern_to_tree_plan_map = {}
         for pattern in self._patterns:
-            if pattern.id not in self.__pattern_was_changed:
+            if pattern.id not in self.__changed_patterns:
                 new_statistics = self._statistics_collector.get_specific_statistics(pattern)
 
                 if self._should_optimize(new_statistics, pattern):
                     self.__optimize(pattern, new_statistics)
 
-        for pattern_id in self.__pattern_was_changed:
+        for pattern_id in self.__changed_patterns:
             pattern = self.__pattern_id_to_pattern_map[pattern_id]
             changed_pattern_to_tree_plan_map[pattern] = self.__pattern_to_tree_plan_map[pattern]
 
         # initialize for next time
-        self.__pattern_was_changed = set()
+        self.__changed_patterns = set()
         self.__init_connected_graph_map()
 
         return changed_pattern_to_tree_plan_map
 
     def __optimize(self, pattern: Pattern, new_statistics: dict):
 
-        if pattern.id in self.__pattern_was_changed:
+        if pattern.id in self.__changed_patterns:
             return
 
         connected_graph_id = self.__pattern_id_to_connected_graph_map[pattern.id]
@@ -75,9 +75,9 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         self.propagate_pattern_id(pattern.id, new_tree_plan)
         self.__pattern_to_tree_plan_map[pattern] = new_tree_plan
 
-        self.__pattern_was_changed.add(pattern.id)
+        self.__changed_patterns.add(pattern.id)
 
-        needs_rebuild = pattern_ids_intersections - still_merge_with - self.__pattern_was_changed
+        needs_rebuild = pattern_ids_intersections - still_merge_with - self.__changed_patterns
         for pattern_need_rebuild_id in needs_rebuild:
             pattern_need_rebuild = self.__pattern_id_to_pattern_map[pattern_need_rebuild_id]
             new_need_statistics = self._statistics_collector.get_specific_statistics(pattern_need_rebuild)
@@ -116,13 +116,13 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
     def __rebuild_connected_graph(self, connected_graph_id: int):
         need_changed_pattern_to_tree_plan_map = {}
         for pattern_id in self.__connected_graph_to_pattern_ids_map[connected_graph_id]:
-            if pattern_id not in self.__pattern_was_changed:
+            if pattern_id not in self.__changed_patterns:
                 pattern = self.__pattern_id_to_pattern_map[pattern_id]
                 new_statistics = self._statistics_collector.get_specific_statistics(pattern)
                 new_tree_plan = self._build_new_plan(new_statistics, pattern)
                 need_changed_pattern_to_tree_plan_map[pattern] = new_tree_plan
                 self.propagate_pattern_id(pattern_id, new_tree_plan)
-                self.__pattern_was_changed.add(pattern_id)
+                self.__changed_patterns.add(pattern_id)
 
         known_unique_tree_plan_nodes = self.__connected_graph_to_known_unique_tree_plan_nodes[connected_graph_id]
         new_pattern_to_tree_plan_merge = \
@@ -142,24 +142,13 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
 
     def __find_intersections_aux(self, current: TreePlanNode, known_unique_tree_plan_nodes: dict,
                                  pattern_ids_intersections: set, pattern_id: int):
-        """
-        Recursively traverses a tree plan and attempts to merge it with previously traversed subtrees.
-        """
+
         pattern_intersections = current.get_pattern_ids()
         # Because this remove, in the end of the day every node contain just id patterns that
         # dont changed.
 
-        if pattern_intersections:
-            pattern_intersections.remove(pattern_id)
-
-            for pattern_intersection_id in pattern_intersections:
-                if pattern_intersection_id not in known_unique_tree_plan_nodes:
-                    known_unique_tree_plan_nodes[pattern_intersection_id] = set()
-                known_unique_tree_plan_nodes[pattern_intersection_id].add(current)
-
-            for pattern_intersection in pattern_intersections:
-                if pattern_intersection not in pattern_ids_intersections:
-                    pattern_ids_intersections.add(pattern_intersection)
+        self.__update_intersections(pattern_intersections, pattern_id, known_unique_tree_plan_nodes,
+                                    pattern_ids_intersections, current)
 
         if isinstance(current, TreePlanLeafNode):
             return
@@ -178,6 +167,19 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
                                           pattern_ids_intersections, pattern_id)
             return
         raise Exception("Unexpected node type: %s" % (type(current),))
+
+    def __update_intersections(self, pattern_intersections, pattern_id, known_unique_tree_plan_nodes,pattern_ids_intersections,
+                               current):
+
+        if pattern_intersections:
+            pattern_intersections.remove(pattern_id)
+
+            for pattern_intersection_id in pattern_intersections:
+                if pattern_intersection_id not in known_unique_tree_plan_nodes:
+                    known_unique_tree_plan_nodes[pattern_intersection_id] = set()
+                known_unique_tree_plan_nodes[pattern_intersection_id].add(current)
+
+                pattern_ids_intersections.add(pattern_intersection_id)
 
     def build_initial_pattern_to_tree_plan_map(self, patterns: list, cost_model_type):
         pattern_to_tree_plan_map = super().build_initial_pattern_to_tree_plan_map(patterns, cost_model_type)
