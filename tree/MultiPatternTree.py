@@ -58,26 +58,9 @@ class MultiPatternTree:
         Constructs a multi-pattern evaluation tree.
         It is assumed that each pattern appears only once in patterns (which is a legitimate assumption).
         """
-        # self.f += 1
-
-        # for pattern, tree_plan in pattern_to_tree_plan_map.items():
-        #
-        #     # self.propagate_pattern_id(pattern.id, tree_plan)
-        #
-        #     new_tree_root = Tree(tree_plan, pattern, self.__storage_params, self.__plan_nodes_to_nodes_map).get_root()
-        #     # print(self.f)
-        #     self.__id_to_output_node_map[pattern.id] = new_tree_root
-        # # print(self.f)
-
-        c = {pattern.id: pattern for pattern in pattern_to_tree_plan_map.keys()}
-        patterns_id = [pattern.id for pattern in pattern_to_tree_plan_map.keys()]
-        a = sorted(patterns_id)
-        b = [pattern_to_tree_plan_map[c[i]] for i in a]
-
-        for i in range(len(a)):
-            new_tree_root = Tree(b[i], c[a[i]], self.__storage_params, self.__plan_nodes_to_nodes_map).get_root()
-            # print(self.f)
-            self.__id_to_output_node_map[a[i]] = new_tree_root
+        for pattern, tree_plan in pattern_to_tree_plan_map.items():
+            new_tree_root = Tree(tree_plan, pattern, self.__storage_params, self.__plan_nodes_to_nodes_map).get_root()
+            self.__id_to_output_node_map[pattern.id] = new_tree_root
 
     def __update_plan_nodes_to_nodes_map(self, not_changed_patterns_id):
         new_plan_nodes_to_nodes_map = {}
@@ -159,4 +142,3 @@ class MultiPatternTree:
 
     def get_output_nodes(self, patterns_ids):
         return [self.__id_to_output_node_map[pattern_id] for pattern_id in patterns_ids]
-        # return {pattern_id: self.__id_to_output_node_map[pattern_id] for pattern_id in patterns_ids}
