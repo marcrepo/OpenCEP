@@ -3,6 +3,7 @@ import pathlib
 import sys
 
 from CEP import CEP
+from base.MultiPattern import MultiPattern
 from evaluation.EvaluationMechanismFactory import TreeBasedEvaluationMechanismParameters
 from adaptive.optimizer.OptimizerFactory import StatisticsDeviationAwareOptimizerParameters
 from stream.Stream import OutputStream
@@ -257,7 +258,7 @@ def uniteFiles(testName, numOfPatterns):
 This function runs multi-pattern CEP on the given list of patterns and prints
 success or fail output.
 """
-def runMultiTest(test_name, patterns, createTestFile = False,
+def runMultiTest(test_name, multi_pattern: MultiPattern, createTestFile = False,
             eval_mechanism_params = DEFAULT_TESTING_EVALUATION_MECHANISM_SETTINGS,
             events = None, eventStream = nasdaqEventStream, expected_file_name=None):
     if expected_file_name is None:
@@ -283,6 +284,7 @@ def runMultiTest(test_name, patterns, createTestFile = False,
     elif expected_file_name == "NotEverywhere":
         events = custom3.duplicate()
 
+    patterns = multi_pattern.get_patterns()
     if createTestFile:
         createExpectedOutput(test_name, patterns, eval_mechanism_params, events.duplicate(), eventStream)
 
