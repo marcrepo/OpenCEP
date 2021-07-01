@@ -55,8 +55,6 @@ class Pattern:
 
         self.confidence = confidence
 
-        self.prior_statistics_exist = False
-
     def set_statistics(self, statistics: Dict):
         """
         Sets the statistical properties related to the events and conditions of this pattern.

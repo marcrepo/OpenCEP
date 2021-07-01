@@ -1,3 +1,4 @@
+import copy
 from datetime import timedelta
 from typing import List
 from base.Pattern import Pattern
@@ -26,9 +27,8 @@ class StatisticsFactory:
         items_to_item_map = {}
         for pattern in patterns:
             if pattern.statistics and stat_type in pattern.statistics:
-                pattern.prior_statistics_exist = True
-
-                for item, statistics in pattern.statistics[stat_type].items():
+                pattern_statistics = copy.deepcopy(pattern.statistics)
+                for item, statistics in pattern_statistics[stat_type].items():
                     if item not in items_to_item_map:
                         items_to_item_map[item] = statistics
 
