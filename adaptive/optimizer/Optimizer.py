@@ -19,12 +19,14 @@ class Optimizer(ABC):
         self._tree_plan_builder = tree_plan_builder
         self.__is_adaptivity_enabled = is_adaptivity_enabled
         self._statistics_collector = statistics_collector
-        self.count = 0
         self._patterns = patterns
 
-    @abstractmethod
     def try_optimize(self):
-        raise NotImplementedError()
+        new_statistics = self._statistics_collector.get_specific_statistics(self._patterns[0])
+        if self._should_optimize(new_statistics, self._patterns[0]):
+            new_tree_plan = self._build_new_plan(new_statistics, self._patterns[0])
+            return new_tree_plan
+        return None
 
     @abstractmethod
     def _should_optimize(self, new_statistics: dict, pattern):
@@ -39,6 +41,10 @@ class Optimizer(ABC):
         Builds and returns a new evaluation plan based on the given statistics.
         """
         raise NotImplementedError()
+
+    # def _build_new_plan(self, new_statistics: dict, pattern: Pattern):
+    #     tree_plan = self._tree_plan_builder.build_tree_plan(pattern, new_statistics)
+    #     return tree_plan
 
     def is_adaptivity_enabled(self):
         """
@@ -77,7 +83,7 @@ class Optimizer(ABC):
         specified in the beginning of the run.
         """
         non_prior_tree_plan_builder = None
-        if pattern.prior_statistics_exist is False:
+        if pattern.statistics is None:
             if DefaultConfig.DEFAULT_INIT_TREE_PLAN_BUILDER == TreePlanBuilderTypes.TRIVIAL_LEFT_DEEP_TREE:
                 non_prior_tree_plan_builder = TrivialLeftDeepTreeBuilder(cost_model_type,
                                                                          DefaultConfig.DEFAULT_NEGATION_ALGORITHM)
