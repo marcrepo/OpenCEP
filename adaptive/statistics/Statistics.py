@@ -28,9 +28,9 @@ class Statistics(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_specific_statistics(self, pattern):
+    def get_pattern_statistics(self, pattern):
         """
-        Given pattern, return his statistics
+        Returns pattern statistics
         """
         raise NotImplementedError()
 
@@ -51,7 +51,7 @@ class ArrivalRatesStatistics(Statistics):
         # Initialize
         self.__init_maps(patterns, predefined_statistics)
 
-    def __create_initialize_statistics(self, pattern: Pattern, args_len: int):
+    def __create_initial_statistics(self, pattern: Pattern, args_len: int):
         self.__pattern_to_arrival_rates[pattern] = [0.0] * args_len
 
     def update(self, event: Event):
@@ -85,9 +85,9 @@ class ArrivalRatesStatistics(Statistics):
         if not is_removed_elements:
             self.__events_arrival_time = []
 
-    def get_specific_statistics(self, pattern):
+    def get_pattern_statistics(self, pattern):
         """
-        Given pattern, return his corresponding selectivity statistics for tree builder
+        Returns arrival rates statistics of the pattern
         """
         arrival_rates = self.__pattern_to_arrival_rates[pattern]
         for i, event_type in enumerate(self.__pattern_to_event_types_map[pattern]):
@@ -101,7 +101,7 @@ class ArrivalRatesStatistics(Statistics):
             # For reconstruction
             self.__pattern_to_event_types_map[pattern] = [primitive_event.type for primitive_event in primitive_events]
 
-            self.__create_initialize_statistics(pattern, len(primitive_events))
+            self.__create_initial_statistics(pattern, len(primitive_events))
 
             for primitive_event in primitive_events:
                 event_type = primitive_event.type
@@ -130,12 +130,9 @@ class SelectivityStatistics(Statistics):
         # Initialize
         self.__init_maps(patterns, predefined_statistics)
 
-    def __create_initialize_statistics(self, pattern: Pattern, args_len: int):
+    def __create_initial_statistics(self, pattern: Pattern, args_len: int):
         """
-        Given pattern, initialize his corresponding selectivity statistics with ones.
-        Note that not all entrances in the matrix will update by run time (because just
-        2 events and conditions between them can be changed).
-        Hence entrances that will not change remain 1.
+        Given a pattern, initializes the corresponding selectivity statistics.
         """
         self.__pattern_to_selectivity_matrix_map[pattern] = [[1.0 for _ in range(args_len)] for _ in range(args_len)]
 
@@ -152,14 +149,12 @@ class SelectivityStatistics(Statistics):
                 if is_condition_success:
                     self.__atomic_condition_to_success_map[atomic_condition_id] += 1
 
-    def get_specific_statistics(self, pattern):
+    def get_pattern_statistics(self, pattern):
         """
-        Given pattern, return his corresponding selectivity statistics for tree builder
+        Returns selectivity statistics of the pattern
         """
         selectivity_matrix = self.__pattern_to_selectivity_matrix_map[pattern]
 
-        #  Thank to initialization, currently, we can update just entrances in the matrix
-        #  that could be change in run time
         indices_to_atomic_condition_map = self.__pattern_to_another_dict[pattern]
 
         for (i, j), atomic_conditions_ids in indices_to_atomic_condition_map.items():
@@ -184,7 +179,7 @@ class SelectivityStatistics(Statistics):
         """
         for pattern in patterns:
             primitive_events = pattern.get_primitive_events()
-            self.__create_initialize_statistics(pattern, len(primitive_events))
+            self.__create_initial_statistics(pattern, len(primitive_events))
 
             indices_to_atomic_condition_map = {}
 
@@ -194,7 +189,7 @@ class SelectivityStatistics(Statistics):
                         {primitive_events[i].name, primitive_events[j].name})
                     atomic_conditions = conditions.extract_atomic_conditions()
                     for atomic_condition in atomic_conditions:
-                        if atomic_condition:
+                        if atomic_condition is not None:
                             atomic_condition_id = str(atomic_condition)
 
                             if atomic_condition_id not in self.__atomic_condition_to_total_map:

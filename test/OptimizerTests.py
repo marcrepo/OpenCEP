@@ -192,10 +192,10 @@ def optimizer_test(old_statistics: Dict, new_statistics: Dict, optimizer_paramet
                                                                                  pattern)
     optimizer = OptimizerFactory.build_optimizer(optimizer_parameters, statistics_collector, pattern)
 
-    statistics_collector.get_specific_statistics = MagicMock(return_value=old_statistics)
+    statistics_collector.get_pattern_statistics = MagicMock(return_value=old_statistics)
     optimizer.try_optimize()
 
-    statistics_collector.get_specific_statistics = MagicMock(return_value=new_statistics)
+    statistics_collector.get_pattern_statistics = MagicMock(return_value=new_statistics)
     new_tree_plan = optimizer.try_optimize()
 
     if new_tree_plan:

@@ -73,6 +73,6 @@ STATISTICS_TIME_WINDOW = timedelta(hours=1)  # Time window for statistics
 STATISTICS_UPDATES_WAIT_TIME = None  # the default wait time between statistics updates or None to disable adaptivity
 
 # multi pattern settings
-PATTERNS_CHANGED_THRESHOLD = 0.5  # the default threshold enable to use the algorithm
+MAX_CHANGED_PATTERNS_THRESHOLD = 0.5  # the default maximum allowed patterns to change without rebuilding the entire connected graph
 IS_MULTI_PATTERN = False
 DEFAULT_TREE_PLAN_MERGER = MultiPatternTreePlanMergeApproaches.TREE_PLAN_TRIVIAL_SHARING_LEAVES

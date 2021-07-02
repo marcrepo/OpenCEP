@@ -28,7 +28,6 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
     def _reoptimize(self, last_event: Event):
         changed_pattern_to_new_tree_plan_map = self._optimizer.try_optimize()
         if changed_pattern_to_new_tree_plan_map:
-
             changed_patterns_ids = {pattern.id for pattern in changed_pattern_to_new_tree_plan_map.keys()}
             old_leaves = self._tree.get_leaves()
 
@@ -38,12 +37,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
     @staticmethod
     def _get_all_old_events(leaves):
         """
-        get list of all old events that already played on the old tree
-        Now, in contrast to trivial tree based evaluation mechanism, this method Works a bit differently.
-        In multi pattern can be situation that same event inject into 2 trees and in arbitrary tree the time window is
-        1 minute and on the other tree the time widnow is 2 minutes. So if we take just event from one leaf
-        (for example, the first tree, and after that we ignore the leaf with the same type in the second tree we
-        loose some events (the events occure after the 1 minute)
+        Get a list of all relevant old events that were played on the old tree.
         """
         events = set()
         for leaf in leaves:
@@ -55,7 +49,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
 
     def _tree_update(self, changed_patterns_ids, old_leaves):
         """
-        Find intersection of both new_tree and old tree.
+        Find the intersection of the new_tree and the old tree.
         The intersection remains and updates the parts of the forest that are actually new
         """
         self._event_types_listeners = self._register_event_listeners(self._tree)
@@ -66,26 +60,32 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
         self.__flush_duplicate_matches(changed_output_nodes)
 
     def __propagate_relevant_data(self, changed_output_nodes, changed_patterns_ids, old_leaves):
+        """
+        Propagates events and partial matches on changed (single)trees
+        """
         not_changed_patterns = self.__all_patterns_ids - changed_patterns_ids
 
-        already_detect = set()
-        leaves_need_save_their_events = set()
+        detected_nodes = set()
+        leaves_to_save = set()
         new_event_types_listeners = {}
 
         for changed_output_node in changed_output_nodes:
-            self.recursive_func(changed_output_node, not_changed_patterns, already_detect,
-                                leaves_need_save_their_events, new_event_types_listeners)
+            self.__propagate_existing_partial_matches(changed_output_node, not_changed_patterns, detected_nodes,
+                                                      leaves_to_save, new_event_types_listeners)
 
-        self.__propagate_events_from_new_leaves(leaves_need_save_their_events, old_leaves, new_event_types_listeners)
+        self.__propagate_events_from_saved_leaves(leaves_to_save, old_leaves, new_event_types_listeners)
 
-    def __propagate_events_from_new_leaves(self, leaves_need_save_their_events, old_leaves, new_event_types_listeners):
-        old_event_types = {old_leaf.get_event_type() for old_leaf in leaves_need_save_their_events}
+    def __propagate_events_from_saved_leaves(self, leaves_to_save, old_leaves, new_event_types_listeners):
+        old_event_types = {old_leaf.get_event_type() for old_leaf in leaves_to_save}
         old_relevant_leaves = {leaf for leaf in old_leaves if leaf.get_event_type() in old_event_types}
         old_events = self._get_all_old_events(old_relevant_leaves)
 
         self._play_old_events_on_tree(old_events, new_event_types_listeners)
 
     def __flush_duplicate_matches(self, changed_output_nodes):
+        """
+        To avoid duplicate matches, flushes the matches from the new tree that have already been written.
+        """
         for changed_output_node in changed_output_nodes:
             for _ in self._tree.get_matches_from_output_node(changed_output_node):
                 pass
@@ -107,20 +107,25 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
         for match in self._tree.get_matches():
             matches.add_item(match)
 
-    def recursive_func(self, node: Node, not_changed_patterns, already_detect: set, leaves_need_save_their_events: set,
-                       new_event_types_listeners: dict):
-
-        if node in already_detect:
+    def __propagate_existing_partial_matches(self, node: Node, unchanged_patterns, detected_nodes: set,
+                                             leaves_to_save: set,
+                                             new_event_types_listeners: dict):
+        """
+        Propagates the existent partial matches and saves the relevant leaves.
+        relevant leaves are leaves that have old events that should be played later on the new tree.
+        """
+        if node in detected_nodes:
             return
 
-        already_detect.add(node)
+        detected_nodes.add(node)
 
         patterns_ids = node.get_pattern_ids()
-        if not_changed_patterns.intersection(patterns_ids):
+        if unchanged_patterns.intersection(patterns_ids):
+            # the node belongs to at least one unchanged (single)tree
             for parent in node.get_parents():
                 parent_ids = parent.get_pattern_ids()
-                if not not_changed_patterns.intersection(parent_ids):
-                    # the parent node is new and not belong to not changed tree
+                if not unchanged_patterns.intersection(parent_ids):
+                    # the parent node does not belong to any unchanged (single)trees
                     partial_matches = node.get_partial_matches()
                     for pm in partial_matches:
                         node.propagate_partial_matches_to_parent(parent, pm)
@@ -128,15 +133,18 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
 
         if isinstance(node, LeafNode):
             self._register_leaf(node, new_event_types_listeners)
-            leaves_need_save_their_events.add(node)
+            leaves_to_save.add(node)
             return
 
         if isinstance(node, UnaryNode):
-            self.recursive_func(node.get_child(), not_changed_patterns, already_detect, leaves_need_save_their_events, new_event_types_listeners)
+            self.__propagate_existing_partial_matches(node.get_child(), unchanged_patterns, detected_nodes,
+                                                      leaves_to_save,
+                                                      new_event_types_listeners)
 
         if isinstance(node, BinaryNode):
-            self.recursive_func(node.get_left_subtree(), not_changed_patterns, already_detect, leaves_need_save_their_events, new_event_types_listeners)
-            self.recursive_func(node.get_right_subtree(), not_changed_patterns, already_detect, leaves_need_save_their_events, new_event_types_listeners)
-
-
-
+            self.__propagate_existing_partial_matches(node.get_left_subtree(), unchanged_patterns, detected_nodes,
+                                                      leaves_to_save,
+                                                      new_event_types_listeners)
+            self.__propagate_existing_partial_matches(node.get_right_subtree(), unchanged_patterns, detected_nodes,
+                                                      leaves_to_save,
+                                                      new_event_types_listeners)

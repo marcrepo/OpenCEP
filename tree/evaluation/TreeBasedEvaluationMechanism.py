@@ -29,7 +29,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
         self._storage_params = storage_params
         self._event_types_listeners = {}
 
-        # Adaptive
+        # Adaptivity
         self._statistics_collector = statistics_collector
         self._optimizer = optimizer
         self.__statistics_update_time_window = statistics_update_time_window
@@ -100,7 +100,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
 
     def _register_event_listeners(self, tree: Tree or MultiPatternTree):
         """
-        Given tree, register leaf listeners for event types.
+        Register leaf listeners for event types on tree.
         """
         event_types_listeners = {}
         for leaf in tree.get_leaves():

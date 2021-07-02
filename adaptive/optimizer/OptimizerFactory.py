@@ -74,7 +74,7 @@ class MultiPatternStatisticsDeviationAwareOptimizerParameters(StatisticsDeviatio
                  statistics_collector_params: StatisticsCollectorParameters = StatisticsCollectorParameters(),
                  statistics_updates_wait_time: timedelta = DefaultConfig.STATISTICS_UPDATES_WAIT_TIME,
                  deviation_threshold: float = DefaultConfig.DEVIATION_OPTIMIZER_THRESHOLD,
-                 patterns_changed_threshold: float = DefaultConfig.PATTERNS_CHANGED_THRESHOLD):
+                 patterns_changed_threshold: float = DefaultConfig.MAX_CHANGED_PATTERNS_THRESHOLD):
         super().__init__(tree_plan_params, statistics_collector_params, statistics_updates_wait_time,
                          deviation_threshold, True)
         self.tree_merger_params = tree_merger_params

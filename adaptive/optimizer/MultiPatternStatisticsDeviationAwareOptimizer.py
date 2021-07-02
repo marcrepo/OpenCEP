@@ -19,19 +19,19 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
                          statistics_collector)
         self.__connected_graph_to_pattern_ids_map = {}
         self.__pattern_id_to_connected_graph_map = {}
-        self.__connected_graph_to_changed_patterns_number = {}
+        self.__connected_graph_to_changed_patterns_num = {}
         self.__recursive_traversal_tree_plan_merger = recursive_traversal_tree_plan_merger
         self.__changed_patterns = set()
         self.__pattern_to_tree_plan_map = None
         self.__pattern_id_to_pattern_map = None
-        self.__patterns_changed_threshold = patterns_changed_threshold
+        self.__max_changed_patterns_threshold = patterns_changed_threshold
         self.__connected_graph_to_known_unique_tree_plan_nodes = {}
 
     def try_optimize(self):
         changed_pattern_to_tree_plan_map = {}
         for pattern in self._patterns:
             if pattern.id not in self.__changed_patterns:
-                new_statistics = self._statistics_collector.get_specific_statistics(pattern)
+                new_statistics = self._statistics_collector.get_pattern_statistics(pattern)
 
                 if self._should_optimize(new_statistics, pattern):
                     self.__optimize(pattern, new_statistics)
@@ -40,66 +40,72 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
             pattern = self.__pattern_id_to_pattern_map[pattern_id]
             changed_pattern_to_tree_plan_map[pattern] = self.__pattern_to_tree_plan_map[pattern]
 
-        # initialize for next time
+        # prepares for the next optimization
         self.__changed_patterns = set()
-        self.__init_connected_graph_map()
+        self.__init_connected_graph_to_pattern_ids_map()
 
         return changed_pattern_to_tree_plan_map
 
     def __optimize(self, pattern: Pattern, new_statistics: dict):
+        """
+        creates a new (single)tree for the pattern
+        """
 
         if pattern.id in self.__changed_patterns:
+            # if the tree that belongs to the pattern has changed then return
             return
 
+        # check if violated maximum allowed patterns
         connected_graph_id = self.__pattern_id_to_connected_graph_map[pattern.id]
         if self.__should_rebuild_connected_graph(connected_graph_id):
             return
 
-        self.__connected_graph_to_changed_patterns_number[connected_graph_id] += 1
-        # First, before create new trees, we want to find all intersection of each
-        # single pattern (which need to change) with other single patterns
+        self.__connected_graph_to_changed_patterns_num[connected_graph_id] += 1
+
+        # Before creating new trees, find intersections with other trees
         pattern_ids_intersections, known_unique_tree_plan_nodes = self.__find_intersections(pattern)
 
         self.__save_known_unique_tree_plan_nodes(known_unique_tree_plan_nodes, pattern)
 
-        # Now, we can reconstruct the tree corresponding to the current single pattern
+        # Reconstruct the tree corresponding to the current single pattern
         tree_plan = self._build_new_plan(new_statistics, pattern)
 
-        # check if the trees was intersect this tree before reconstruct are still intersect the new tree
         tree_plan_node = tree_plan.root
-
-        still_merge_with = self.__get_still_merged(tree_plan_node, pattern_ids_intersections,
+        still_merged = self.__get_still_merged(tree_plan_node, pattern_ids_intersections,
                                                    known_unique_tree_plan_nodes)
 
         new_tree_plan = TreePlan(tree_plan_node)
-        self.propagate_pattern_id(pattern.id, new_tree_plan)
+        self.__propagate_pattern_id(pattern.id, new_tree_plan)
         self.__pattern_to_tree_plan_map[pattern] = new_tree_plan
 
         self.__changed_patterns.add(pattern.id)
 
-        needs_rebuild = pattern_ids_intersections - still_merge_with - self.__changed_patterns
-        for pattern_need_rebuild_id in needs_rebuild:
-            pattern_need_rebuild = self.__pattern_id_to_pattern_map[pattern_need_rebuild_id]
-            new_need_statistics = self._statistics_collector.get_specific_statistics(pattern_need_rebuild)
-            self.__optimize(pattern_need_rebuild, new_need_statistics)
+        to_rebuild = pattern_ids_intersections - still_merged - self.__changed_patterns
+        for pattern_id_to_rebuild in to_rebuild:
+            pattern_to_rebuild = self.__pattern_id_to_pattern_map[pattern_id_to_rebuild]
+            pattern_to_rebuild_statistics = self._statistics_collector.get_pattern_statistics(pattern_to_rebuild)
+            self.__optimize(pattern_to_rebuild, pattern_to_rebuild_statistics)
 
-    def __get_still_merged(self, tree_plan_node: TreePlanNode, pattern_ids_intersections: set,
+    def __get_still_merged(self, tree_plan_node: TreePlanNode, intersection_pattern_ids: set,
                            known_unique_tree_plan_nodes: dict):
-        still_merge_with = set()
-        for pattern_intersection_id in pattern_ids_intersections:
+        """
+        Checks if the current tree intersects trees in intersection_pattern_ids
+        """
+        still_merged = set()
+        for intersection_pattern_id in intersection_pattern_ids:
             is_merged = [False]
             tree_plan_node = self.__recursive_traversal_tree_plan_merger.traverse_tree_plan(tree_plan_node,
                                                                                             known_unique_tree_plan_nodes[
-                                                                                                pattern_intersection_id],
+                                                                                                intersection_pattern_id],
                                                                                             is_merged)
             if is_merged:
-                still_merge_with.add(pattern_intersection_id)
+                still_merged.add(intersection_pattern_id)
 
-        return still_merge_with
+        return still_merged
 
     def __should_rebuild_connected_graph(self, connected_graph_id: int):
-        number_patterns_was_changed = self.__connected_graph_to_changed_patterns_number[connected_graph_id]
-        if number_patterns_was_changed > self.__patterns_changed_threshold * \
+        changed_patterns_num = self.__connected_graph_to_changed_patterns_num[connected_graph_id]
+        if changed_patterns_num > self.__max_changed_patterns_threshold * \
                 len(self.__connected_graph_to_pattern_ids_map[connected_graph_id]):
             self.__rebuild_connected_graph(connected_graph_id)
             return True
@@ -114,19 +120,22 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         self.__connected_graph_to_known_unique_tree_plan_nodes[connected_graph].union(known_unique_tree_plan_nodes)
 
     def __rebuild_connected_graph(self, connected_graph_id: int):
-        need_changed_pattern_to_tree_plan_map = {}
+        """
+        Rebuild entire connected graph
+        """
+        pattern_to_change_to_tree_plan_map = {}
         for pattern_id in self.__connected_graph_to_pattern_ids_map[connected_graph_id]:
             if pattern_id not in self.__changed_patterns:
                 pattern = self.__pattern_id_to_pattern_map[pattern_id]
-                new_statistics = self._statistics_collector.get_specific_statistics(pattern)
+                new_statistics = self._statistics_collector.get_pattern_statistics(pattern)
                 new_tree_plan = self._build_new_plan(new_statistics, pattern)
-                need_changed_pattern_to_tree_plan_map[pattern] = new_tree_plan
-                self.propagate_pattern_id(pattern_id, new_tree_plan)
+                pattern_to_change_to_tree_plan_map[pattern] = new_tree_plan
+                self.__propagate_pattern_id(pattern_id, new_tree_plan)
                 self.__changed_patterns.add(pattern_id)
 
         known_unique_tree_plan_nodes = self.__connected_graph_to_known_unique_tree_plan_nodes[connected_graph_id]
         new_pattern_to_tree_plan_merge = \
-            self.__recursive_traversal_tree_plan_merger.merge_tree_plans(need_changed_pattern_to_tree_plan_map,
+            self.__recursive_traversal_tree_plan_merger.merge_tree_plans(pattern_to_change_to_tree_plan_map,
                                                                          known_unique_tree_plan_nodes)
 
         for pattern, tree_plan in new_pattern_to_tree_plan_merge.items():
@@ -182,6 +191,9 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
                 pattern_ids_intersections.add(pattern_intersection_id)
 
     def build_initial_pattern_to_tree_plan_map(self, patterns: list, cost_model_type):
+        """
+        Creates an initial mapping from patterns to tree plan
+        """
         pattern_to_tree_plan_map = super().build_initial_pattern_to_tree_plan_map(patterns, cost_model_type)
 
         self.__pattern_to_tree_plan_map = \
@@ -191,14 +203,14 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
 
         for pattern, tree_plan in self.__pattern_to_tree_plan_map.items():
             self.__pattern_id_to_pattern_map[pattern.id] = pattern
-            self.propagate_pattern_id(pattern.id, tree_plan)
+            self.__propagate_pattern_id(pattern.id, tree_plan)
 
         # For know the Related components in all graph
-        self.__init_connected_graph_map()
+        self.__init_connected_graph_to_pattern_ids_map()
 
         return self.__pattern_to_tree_plan_map
 
-    def __init_connected_graph_map(self):
+    def __init_connected_graph_to_pattern_ids_map(self):
         pattern_id_to_neighbors_map = {}
         for pattern, tree_plan in self.__pattern_to_tree_plan_map.items():
             neighbors_ids = set()
@@ -209,45 +221,54 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
             neighbors_ids.remove(pattern.id)
             pattern_id_to_neighbors_map[pattern.id] = neighbors_ids
 
-        self.__connected_graph_to_pattern_ids_map = self.__find_connected_graphs(pattern_id_to_neighbors_map)
-        self.__connected_graph_to_changed_patterns_number = {connected_graph: 0 for connected_graph in
-                                                             self.__connected_graph_to_pattern_ids_map.keys()}
+        self.__connected_graph_to_pattern_ids_map = self.__get_connected_graphs(pattern_id_to_neighbors_map)
+        self.__connected_graph_to_changed_patterns_num = {connected_graph: 0 for connected_graph in
+                                                          self.__connected_graph_to_pattern_ids_map.keys()}
 
         for connected_graph in self.__connected_graph_to_pattern_ids_map.keys():
-            self.__connected_graph_to_changed_patterns_number[connected_graph] = 0
+            self.__connected_graph_to_changed_patterns_num[connected_graph] = 0
             self.__connected_graph_to_known_unique_tree_plan_nodes[connected_graph] = set()
 
-    def __find_connected_graphs(self, pattern_id_to_neighbors_map: dict):
-        patterns_ids_remains = set(pattern_id_to_neighbors_map.keys())
+    def __get_connected_graphs(self, pattern_id_to_neighbors_map: dict):
+        """
+        Return all connected graphs in the forrest
+        """
+        remaining_pattern_ids = set(pattern_id_to_neighbors_map.keys())
         connected_graph_id = 0
         connected_graphs = {}
-        while patterns_ids_remains:
+        while remaining_pattern_ids:
             q = Queue()
-            pattern_id = patterns_ids_remains.pop()
+            pattern_id = remaining_pattern_ids.pop()
             q.put(pattern_id)
             connected_graphs[connected_graph_id] = self.__bfs_like(pattern_id_to_neighbors_map, q, connected_graph_id,
-                                                                   patterns_ids_remains)
+                                                                   remaining_pattern_ids)
 
             connected_graph_id += 1
 
         return connected_graphs
 
-    def __bfs_like(self, pattern_id_to_neighbors_map, q, connected_graph_id, patterns_ids_remains):
+    def __bfs_like(self, pattern_id_to_neighbors_map, q, connected_graph_id, remaining_pattern_ids):
+        """
+        Returns all pattern ids that belong to the connected graph
+        """
         connected_graph = set()
         while not q.empty():
             pattern_id = q.get()
             self.__pattern_id_to_connected_graph_map[pattern_id] = connected_graph_id
-            pattern_ids_neighbors = pattern_id_to_neighbors_map[pattern_id]
-            for pattern_id_neighbor in pattern_ids_neighbors:
-                if pattern_id_neighbor in patterns_ids_remains:
-                    q.put(pattern_id_neighbor)
-                    patterns_ids_remains.remove(pattern_id_neighbor)
+            neighbors_pattern_id = pattern_id_to_neighbors_map[pattern_id]
+            for neighbor_pattern_id in neighbors_pattern_id:
+                if neighbor_pattern_id in remaining_pattern_ids:
+                    q.put(neighbor_pattern_id)
+                    remaining_pattern_ids.remove(neighbor_pattern_id)
 
             connected_graph.add(pattern_id)
 
         return connected_graph
 
     @staticmethod
-    def propagate_pattern_id(pattern_id: int, tree_plan: TreePlan):
+    def __propagate_pattern_id(pattern_id: int, tree_plan: TreePlan):
+        """
+        Propagates the given pattern ID down the tree plan.
+        """
         root = tree_plan.root
         root.propagate_pattern_id(pattern_id)

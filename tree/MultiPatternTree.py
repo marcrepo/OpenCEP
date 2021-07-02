@@ -42,15 +42,15 @@ class MultiPatternTree:
 
     def __set_statistics_collector(self, not_changed_patterns_id):
         """
-        In oposite to single pattern, in multi pattern its importent to set the same statistics collector to all patterns.
-        For some tree, he could be contains old nodes and new nodes. so we need the new nodes fave the same referance
-        to statistics collector as the old nodes.
+        Unlike single pattern, in multi pattern its important to set the same statistics collector to all patterns.
+        Trees may contains old nodes and new nodes but they all should share the same(old) statistics collector.
+        Therefore new nodes need to be set with the old statistics collector.
         """
-        # set the statistics collector reference to every atomic condition
         patterns_not_changed = {self.__id_to_pattern_map[pattern_id] for pattern_id in not_changed_patterns_id}
         for pattern in patterns_not_changed:
             condition = pattern.condition
             for atomic_condition in condition.extract_atomic_conditions():
+                # set the statistics collector reference to every atomic condition
                 atomic_condition.set_statistics_collector(self.__statistics_collector)
 
     def __construct_multi_pattern_tree(self, pattern_to_tree_plan_map: Dict[Pattern, TreePlan]):
@@ -66,8 +66,6 @@ class MultiPatternTree:
         new_plan_nodes_to_nodes_map = {}
         for plan_node, node in self.__plan_nodes_to_nodes_map.items():
             for pattern_id in plan_node.get_pattern_ids():
-                # if in plan_node there is at least one id its mean that this node
-                # belong to some pattern that his tree doesnt changed
                 if pattern_id in not_changed_patterns_id:
                     new_plan_nodes_to_nodes_map[plan_node] = node
                     break
@@ -77,7 +75,6 @@ class MultiPatternTree:
         """
         Returns all leaves in this multi-pattern-tree.
         """
-
         leaves = set()
         for output_node in self.__id_to_output_node_map.values():
             leaves |= set(output_node.get_leaves())
@@ -136,9 +133,6 @@ class MultiPatternTree:
             first_unbounded_negative_node.flush_pending_matches()
             # the pending matches were released and have hopefully reached the roots
         return self.get_matches()
-
-    def get_specific_output_node(self, pattern: Pattern):
-        return self.__id_to_output_node_map[pattern.id]
 
     def get_output_nodes(self, patterns_ids):
         return [self.__id_to_output_node_map[pattern_id] for pattern_id in patterns_ids]
