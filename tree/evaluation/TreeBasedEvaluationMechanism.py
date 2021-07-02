@@ -19,8 +19,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
     An implementation of the tree-based evaluation mechanism.
     """
 
-    def __init__(self, tree, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
-                 storage_params: TreeStorageParameters,
+    def __init__(self, tree, storage_params: TreeStorageParameters,
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,
                  statistics_update_time_window: timedelta = None):

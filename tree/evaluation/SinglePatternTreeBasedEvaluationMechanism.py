@@ -20,7 +20,7 @@ class SinglePatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism, AB
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,
                  statistics_update_time_window: timedelta = None):
-        super().__init__(tree, pattern_to_tree_plan_map, storage_params, statistics_collector,
+        super().__init__(tree, storage_params, statistics_collector,
                          optimizer, statistics_update_time_window)
 
         # The remainder of the initialization process is only relevant for the freeze map feature. This feature can
@@ -47,7 +47,7 @@ class SinglePatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism, AB
         the statistics collector of the TreeBasedEvaluationMechanism
         """
         atomic_conditions = new_tree.get_root().get_condition().extract_atomic_conditions()
-        if atomic_conditions is not None:
+        if atomic_conditions:
             # extract the statistics collector from an arbitrary condition
             # because each condition stores a reference to the statistics collector
             first_atomic_conditions = atomic_conditions[0]

@@ -21,7 +21,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,
                  statistics_update_time_window: timedelta = None):
-        super().__init__(tree, pattern_to_tree_plan_map, storage_params, statistics_collector,
+        super().__init__(tree, storage_params, statistics_collector,
                          optimizer, statistics_update_time_window)
         self.__all_patterns_ids = {pattern.id for pattern in pattern_to_tree_plan_map.keys()}
 
