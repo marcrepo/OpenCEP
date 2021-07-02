@@ -22,7 +22,10 @@ class Optimizer(ABC):
         self._patterns = patterns
 
     def try_optimize(self):
-        new_statistics = self._statistics_collector.get_specific_statistics(self._patterns[0])
+        """
+        Tries to optimize tree if needed
+        """
+        new_statistics = self._statistics_collector.get_pattern_statistics(self._patterns[0])
         if self._should_optimize(new_statistics, self._patterns[0]):
             new_tree_plan = self._build_new_plan(new_statistics, self._patterns[0])
             return new_tree_plan
@@ -42,10 +45,6 @@ class Optimizer(ABC):
         """
         raise NotImplementedError()
 
-    # def _build_new_plan(self, new_statistics: dict, pattern: Pattern):
-    #     tree_plan = self._tree_plan_builder.build_tree_plan(pattern, new_statistics)
-    #     return tree_plan
-
     def is_adaptivity_enabled(self):
         """
         Returns True if adaptive functionality is enabled and False otherwise.
@@ -53,8 +52,11 @@ class Optimizer(ABC):
         return self.__is_adaptivity_enabled
 
     def build_initial_pattern_to_tree_plan_map(self, patterns: list, cost_model_type):
+        """
+        Creates a mapping from patterns to tree plan
+        """
         pattern_to_tree_plan_map = {
-            pattern: self.build_initial_plan(self._statistics_collector.get_specific_statistics(pattern),
+            pattern: self.build_initial_plan(self._statistics_collector.get_pattern_statistics(pattern),
                                              cost_model_type, pattern)
             for pattern in patterns}
 
@@ -63,7 +65,7 @@ class Optimizer(ABC):
     def build_initial_plan(self, initial_statistics: dict, cost_model_type: TreeCostModels,
                            pattern: Pattern):
         """
-        initializes the Statistic objects with initial statistics if such statistics exists,
+        Initializes the Statistic objects with initial statistics if such statistics exists,
         else, applies the default algorithm that does not require statistics.
         Note: right now only the TrivialLeftDeepTreeBuilder algorithm does not require statistics.
         """

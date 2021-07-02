@@ -217,7 +217,7 @@ def iiGreedyNestedStructuralTest():
     initial_statistics = {StatisticsTypes.ARRIVAL_RATES: arrivalRates,
                           StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix}
 
-    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_specific_statistics',
+    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_pattern_statistics',
                       return_value=initial_statistics):
         with patch.object(adaptive.optimizer.Optimizer.Optimizer, '_build_non_prior_tree_plan_builder',
                           return_value=None):
@@ -271,7 +271,7 @@ def greedyNestedComplexStructuralTest():
     initial_statistics = {StatisticsTypes.ARRIVAL_RATES: arrivalRates,
                           StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix}
 
-    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_specific_statistics',
+    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_pattern_statistics',
                       return_value=initial_statistics):
         with patch.object(adaptive.optimizer.Optimizer.Optimizer, '_build_non_prior_tree_plan_builder',
                           return_value=None):
@@ -342,7 +342,7 @@ def dpLdNestedStructuralTest():
     initial_statistics = {StatisticsTypes.ARRIVAL_RATES: arrivalRates,
                           StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix}
 
-    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_specific_statistics',
+    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_pattern_statistics',
                       return_value=initial_statistics):
         with patch.object(adaptive.optimizer.Optimizer.Optimizer, '_build_non_prior_tree_plan_builder',
                           return_value=None):
@@ -415,7 +415,7 @@ def dpBNestedStructuralTest():
     initial_statistics = {StatisticsTypes.ARRIVAL_RATES: arrivalRates,
                           StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix}
 
-    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_specific_statistics',
+    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_pattern_statistics',
                       return_value=initial_statistics):
         with patch.object(adaptive.optimizer.Optimizer.Optimizer, '_build_non_prior_tree_plan_builder',
                           return_value=None):
@@ -466,7 +466,7 @@ def dpLdNestedComplexStructuralTest():
     initial_statistics = {StatisticsTypes.ARRIVAL_RATES: arrivalRates,
                           StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix}
 
-    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_specific_statistics',
+    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_pattern_statistics',
                       return_value=initial_statistics):
         with patch.object(adaptive.optimizer.Optimizer.Optimizer, '_build_non_prior_tree_plan_builder',
                           return_value=None):
@@ -518,7 +518,7 @@ def zstreamOrdNestedComplexStructuralTest():
     initial_statistics = {StatisticsTypes.ARRIVAL_RATES: arrivalRates,
                           StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix}
 
-    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_specific_statistics',
+    with patch.object(adaptive.statistics.StatisticsCollector.StatisticsCollector, 'get_pattern_statistics',
                       return_value=initial_statistics):
         with patch.object(adaptive.optimizer.Optimizer.Optimizer, '_build_non_prior_tree_plan_builder',
                           return_value=None):

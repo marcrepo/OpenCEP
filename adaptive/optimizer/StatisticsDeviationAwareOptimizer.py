@@ -14,7 +14,7 @@ class StatisticsDeviationAwareOptimizer(Optimizer):
     def __init__(self, patterns: List[Pattern], tree_plan_builder: TreePlanBuilder, is_adaptivity_enabled: bool,
                  type_to_deviation_aware_functions_map: dict, statistics_collector: StatisticsCollector):
         super().__init__(patterns, tree_plan_builder, is_adaptivity_enabled, statistics_collector)
-        self._prev_statistics = {pattern: statistics_collector.get_specific_statistics(pattern) for pattern in patterns}
+        self._prev_statistics = {pattern: statistics_collector.get_pattern_statistics(pattern) for pattern in patterns}
         self.__type_to_deviation_aware_tester_map = type_to_deviation_aware_functions_map
 
     def _should_optimize(self, new_statistics: dict, pattern: Pattern):

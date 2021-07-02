@@ -36,15 +36,22 @@ class SinglePatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism, AB
     def _reoptimize(self, last_event: Event):
         new_tree_plan = self._optimizer.try_optimize()
 
-        if new_tree_plan:
+        if new_tree_plan is not None:
             new_tree = Tree(new_tree_plan, self._pattern, self._storage_params)
             self._tree_update(new_tree, last_event.timestamp)
+            self.__update_statistics_collector(new_tree)
 
-            # set the new statistics collector in the Tree to be
-            # the statistics collector of the TreeBasedEvaluationMechanism
-            some_atomic_condition = new_tree.get_root().get_condition().extract_atomic_conditions()
-            if some_atomic_condition:
-                self.__statistics_collector = some_atomic_condition[0].get_statistics_collector()
+    def __update_statistics_collector(self, new_tree):
+        """
+        set the new statistics collector of the tree to be
+        the statistics collector of the TreeBasedEvaluationMechanism
+        """
+        atomic_conditions = new_tree.get_root().get_condition().extract_atomic_conditions()
+        if atomic_conditions is not None:
+            # extract the statistics collector from an arbitrary condition
+            # because each condition stores a reference to the statistics collector
+            first_atomic_conditions = atomic_conditions[0]
+            self.__statistics_collector = first_atomic_conditions.get_statistics_collector()
 
     def _play_new_event(self, event: Event, event_types_listeners):
         """
@@ -125,8 +132,11 @@ class SinglePatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism, AB
             self._remove_matched_freezers(match.events)
 
     def _play_new_event_on_tree(self, event: Event, matches: OutputStream):
+        """
+        Lets the tree handle the new event
+        """
         self.__remove_expired_freezers(event)
         self._play_new_event_on_tree_aux(event, matches)
 
     def _play_new_event_on_tree_aux(self, event: Event, matches: OutputStream):
-        pass
+        raise NotImplementedError()
