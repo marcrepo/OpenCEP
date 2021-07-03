@@ -316,12 +316,12 @@ cep = CEP(pattern, eval_mechanism_params)
 ### Optimizing evaluation performance with the use of Adaptive CEP
 
 OpenCEP supports timely evaluation plan replacement according to statistics obtained from the stream. 
-The CEP object maintains a statistics collector that supports several types of statistics. in addition it supports several optimization algorithms 
+The CEP object maintains a statistics collector that supports several types of statistics. in addition, it supports several optimization algorithms 
 that decide when to invoke plan reconstruction and a tree based evaluation method that decides how to replace evaluation trees.
 The following example shows how to create a CEP object that supports adaptive evaluation plan replacement based on 
 event type arrival rates and selectivity matrix statistics along with a deviation aware optimizer.
 
-First, define parameters of the statistics collector that will keep arrival rates statistics, 
+First, define parameters of the statistics collector that will store arrival rates statistics, 
 selectivity statistics and a certain time window:
 ```
 statistics_types = [StatisticsTypes.SELECTIVITY_MATRIX, StatisticsTypes.ARRIVAL_RATES]
@@ -335,15 +335,26 @@ statistics_collector_params = StatisticsCollectorParameters(statistics_types=sta
 To make use of the statistics, an optimizer is needed. The following example shows how to initialize the optimizer parameters:
 ```
 # There are different types of optimizers, here we define an optimizer that 
-# calls for a new evaluation plan if at least one of the statistics has deviated by a factor of t. 
+# calls for a new evaluation plan if at least one of the statistics has deviated by a factor of deviation_threshold. 
 # note that different optimizers are initialized by different parameters.
 
-optimizer_params = StatisticsDeviationAwareOptimizerParameters(t = 0.5, statistics_types = statistics_types)
+optimizer_params = StatisticsDeviationAwareOptimizerParameters(deviation_threshold = 0.5, statistics_collector_params = statistics_collector_params)
 ```
 
 After defining the parameters of the statistics collector and the optimizer, we create a CEP object that support adaptivity:
 ```
-eval_mechanism_params = TreeBasedEvaluationMechanismParameters(statistics_collector_params=statistics_collector_params, optimizer_params=optimizer_params)
+eval_mechanism_params = TreeBasedEvaluationMechanismParameters(optimizer_params=optimizer_params)
+CEP = CEP(pattern, eval_mechanism_params)
+```
+
+#### Multi-Pattern Adaptivity
+
+Multi-pattern currently supports deviation aware optimization
+
+```
+multi_pattern_optimizer_params = MultiPatternStatisticsDeviationAwareOptimizerParameters(deviation_threshold = 0.5, 
+                                                         statistics_collector_params = statistics_collector_params)
+eval_mechanism_params = TreeBasedEvaluationMechanismParameters(optimizer_params=optimizer_params)
 CEP = CEP(pattern, eval_mechanism_params)
 ```
 
