@@ -8,7 +8,7 @@ from adaptive.statistics.Statistics import SelectivityStatistics, ArrivalRatesSt
 
 class StatisticsFactory:
     """
-    Creates a statistics collector given its specification.
+    Creates a statistics given its specification.
     """
 
     @staticmethod
