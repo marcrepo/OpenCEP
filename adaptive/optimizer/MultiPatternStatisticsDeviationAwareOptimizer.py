@@ -93,10 +93,10 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
     def __merge(self, tree_plan_node: TreePlanNode, intersection_pattern_ids_before: set,
                 known_unique_tree_plan_nodes: dict):
         """
-        merge tree plan to nodes in known_unique_tree_plan_nodes dictionary.
-        Return patterns ids that merged with the tree plan.
-        Currently, use the traverse_tree_plan_function to try and merge.
-        It could be any merge algorithm
+        Merge tree plan to nodes in known_unique_tree_plan_nodes dictionary.
+        Returns patterns ids that merged with the tree plan.
+        Currently, use the traverse_tree_plan_function to try and merge,
+        it could be any merge algorithm.
         """
         still_merged = set()
         for intersection_pattern_id in intersection_pattern_ids_before:
@@ -120,8 +120,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
 
     def __save_known_unique_tree_plan_nodes(self, known_unique_tree_plan_nodes: dict, pattern: Pattern):
         """
-        If we will pass the threshold and rebuild all graph so we want save all the nodes of trees that
-        was already build
+        Saves all the nodes of tree that were already built.
         """
         connected_graph = self.__pattern_id_to_connected_graph_map[pattern.id]
         self.__connected_graph_to_known_unique_tree_plan_nodes[connected_graph].union(known_unique_tree_plan_nodes)
@@ -186,8 +185,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
                                current):
 
         if pattern_intersections:
-            # Because this remove, in the end of the day every node contain just id patterns that
-            # dont changed.
+            # Use of remove so that we will be left with nodes that contain only patterns that didnt change
             pattern_intersections.remove(pattern_id)
 
             for pattern_intersection_id in pattern_intersections:

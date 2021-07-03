@@ -14,8 +14,8 @@ from plan.negation.NegationAlgorithmTypes import NegationAlgorithmTypes
 
 def generate_statistics(pattern):
     """
-    selectivity looks like - {condition: (success, total)}
-    arrival_rates looks like - {event type: arrival rates statistics}
+    Selectivity structure - {condition: (success, total)}
+    Arrival_rates structure - {event type: arrival rates count}
     """
     primitive_events = pattern.get_primitive_events()
     atomic_conditions = set()
