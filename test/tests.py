@@ -10,125 +10,125 @@ import test.EventProbabilityTests
 from test.NestedTests import *
 from test.UnitTests.test_storage import run_storage_tests
 from test.UnitTests.RuleTransformationTests import ruleTransformationTests
-
+from test.AdaptiveMultiPattern_tests import *
 
 runTest.over_all_time = 0
 
-# # # basic functionality tests
-# oneArgumentsearchTest()
-# simplePatternSearchTest()
-# googleAscendPatternSearchTest()
-# amazonInstablePatternSearchTest()
-# msftDrivRacePatternSearchTest()
-# googleIncreasePatternSearchTest()
-# amazonSpecificPatternSearchTest()
-# googleAmazonLowPatternSearchTest()
-# nonsensePatternSearchTest()
-# hierarchyPatternSearchTest()
-# duplicateEventTypeTest()
-#
-# # tree plan generation algorithms
-# arrivalRatesPatternSearchTest()
-# nonFrequencyPatternSearchTest()
-# frequencyPatternSearchTest()
-# nonFrequencyPatternSearch2Test()
-# frequencyPatternSearch2Test()
-# nonFrequencyPatternSearch3Test()
-# frequencyPatternSearch3Test()
-# nonFrequencyPatternSearch4Test()
-# frequencyPatternSearch4Test()
-# nonFrequencyPatternSearch5Test()
-# frequencyPatternSearch5Test()
-# frequencyPatternSearch6Test()
-# greedyPatternSearchTest()
-# iiRandomPatternSearchTest()
-# iiRandom2PatternSearchTest()
-# iiGreedyPatternSearchTest()
-# iiGreedy2PatternSearchTest()
-#
-# zStreamOrdPatternSearchTest()
-# zStreamPatternSearchTest()
-# dpBPatternSearchTest()
-# dpLdPatternSearchTest()
-#
-# nonFrequencyTailoredPatternSearchTest()
-# frequencyTailoredPatternSearchTest()
-# #
-# # # tree structure tests - CEP object only created not used
-# structuralTest1()
-# structuralTest2()
-# structuralTest3()
-# structuralTest4()
-# structuralTest5()
-# structuralTest6()
-#
-# # Kleene closure tests
-# oneArgumentsearchTestKleeneClosure()
-# MinMax_0_TestKleeneClosure()
-# MinMax_1_TestKleeneClosure()
-# MinMax_2_TestKleeneClosure()
-# KC_AND()
-#
-# # Kleene Condition tests
-# KC_AND_IndexCondition_01()
-# KC_AND_IndexCondition_02()
-# KC_AND_NegOffSet_01()
-# KC_AllValues()
-# KC_Specific_Value()
-# KC_Mixed()
-# KC_Condition_Failure_01()
-# KC_Condition_Failure_02()
-# KC_Condition_Failure_03()
-# #
-# # negation tests
-# simpleNotTest()
-# multipleNotInTheMiddleTest()
-# oneNotAtTheBeginningTest()
-# multipleNotAtTheBeginningTest()
-# oneNotAtTheEndTest()
-# multipleNotAtTheEndTest()
-# multipleNotBeginAndEndTest()
-# testWithMultipleNotAtBeginningMiddleEnd()
-# testWithMultipleNotAtBeginningMiddleEnd2()
-# simpleNotTestStat()
-# multipleNotInTheMiddleTestStat()
-# oneNotAtTheBeginningTestStat()
-# multipleNotAtTheBeginningTestStat()
-# oneNotAtTheEndTestStat()
-# multipleNotAtTheEndTestStat()
-# multipleNotBeginAndEndTestStat()
-# testWithMultipleNotAtBeginningMiddleEndStat()
-# testWithMultipleNotAtBeginningMiddleEnd2Stat()
-# simpleNotTestDPTree()
-# multipleNotInTheMiddleTestDPTree()
-# oneNotAtTheBeginningTestDPTree()
-# multipleNotAtTheBeginningTestDPTree()
-# oneNotAtTheEndTestDPTree()
-# multipleNotAtTheEndTestDPTree()
-# multipleNotBeginAndEndTestDPTree()
-# testWithMultipleNotAtBeginningMiddleEndDPTree()
-# testWithMultipleNotAtBeginningMiddleEnd2DPTree()
-# simpleNotTestStatDPTree()
-# multipleNotInTheMiddleTestStatDPTree()
-# oneNotAtTheBeginningTestStatDPTree()
-# multipleNotAtTheBeginningTestStatDPTree()
-# oneNotAtTheEndTestStatDPTree()
-# multipleNotAtTheEndTestStatDPTree()
-# multipleNotBeginAndEndTestStatDPTree()
-# testWithMultipleNotAtBeginningMiddleEndStatDPTree()
-# testWithMultipleNotAtBeginningMiddleEnd2StatDPTree()
-#
-# # consumption policies tests
-# singleType1PolicyPatternSearchTest()
-# singleType2PolicyPatternSearchTest()
-# contiguousPolicyPatternSearchTest()
-# contiguousPolicy2PatternSearchTest()
-# freezePolicyPatternSearchTest()
-# freezePolicy2PatternSearchTest()
-#
-# # storage tests
-# sortedStorageTest()
-# run_storage_tests()
+# basic functionality tests
+oneArgumentsearchTest()
+simplePatternSearchTest()
+googleAscendPatternSearchTest()
+amazonInstablePatternSearchTest()
+msftDrivRacePatternSearchTest()
+googleIncreasePatternSearchTest()
+amazonSpecificPatternSearchTest()
+googleAmazonLowPatternSearchTest()
+nonsensePatternSearchTest()
+hierarchyPatternSearchTest()
+duplicateEventTypeTest()
+
+# tree plan generation algorithms
+arrivalRatesPatternSearchTest()
+nonFrequencyPatternSearchTest()
+frequencyPatternSearchTest()
+nonFrequencyPatternSearch2Test()
+frequencyPatternSearch2Test()
+nonFrequencyPatternSearch3Test()
+frequencyPatternSearch3Test()
+nonFrequencyPatternSearch4Test()
+frequencyPatternSearch4Test()
+nonFrequencyPatternSearch5Test()
+frequencyPatternSearch5Test()
+frequencyPatternSearch6Test()
+greedyPatternSearchTest()
+iiRandomPatternSearchTest()
+iiRandom2PatternSearchTest()
+iiGreedyPatternSearchTest()
+iiGreedy2PatternSearchTest()
+
+zStreamOrdPatternSearchTest()
+zStreamPatternSearchTest()
+dpBPatternSearchTest()
+dpLdPatternSearchTest()
+
+nonFrequencyTailoredPatternSearchTest()
+frequencyTailoredPatternSearchTest()
+
+# tree structure tests - CEP object only created not used
+structuralTest1()
+structuralTest2()
+structuralTest3()
+structuralTest4()
+structuralTest5()
+structuralTest6()
+
+# Kleene closure tests
+oneArgumentsearchTestKleeneClosure()
+MinMax_0_TestKleeneClosure()
+MinMax_1_TestKleeneClosure()
+MinMax_2_TestKleeneClosure()
+KC_AND()
+
+# Kleene Condition tests
+KC_AND_IndexCondition_01()
+KC_AND_IndexCondition_02()
+KC_AND_NegOffSet_01()
+KC_AllValues()
+KC_Specific_Value()
+KC_Mixed()
+KC_Condition_Failure_01()
+KC_Condition_Failure_02()
+KC_Condition_Failure_03()
+
+# negation tests
+simpleNotTest()
+multipleNotInTheMiddleTest()
+oneNotAtTheBeginningTest()
+multipleNotAtTheBeginningTest()
+oneNotAtTheEndTest()
+multipleNotAtTheEndTest()
+multipleNotBeginAndEndTest()
+testWithMultipleNotAtBeginningMiddleEnd()
+testWithMultipleNotAtBeginningMiddleEnd2()
+simpleNotTestStat()
+multipleNotInTheMiddleTestStat()
+oneNotAtTheBeginningTestStat()
+multipleNotAtTheBeginningTestStat()
+oneNotAtTheEndTestStat()
+multipleNotAtTheEndTestStat()
+multipleNotBeginAndEndTestStat()
+testWithMultipleNotAtBeginningMiddleEndStat()
+testWithMultipleNotAtBeginningMiddleEnd2Stat()
+simpleNotTestDPTree()
+multipleNotInTheMiddleTestDPTree()
+oneNotAtTheBeginningTestDPTree()
+multipleNotAtTheBeginningTestDPTree()
+oneNotAtTheEndTestDPTree()
+multipleNotAtTheEndTestDPTree()
+multipleNotBeginAndEndTestDPTree()
+testWithMultipleNotAtBeginningMiddleEndDPTree()
+testWithMultipleNotAtBeginningMiddleEnd2DPTree()
+simpleNotTestStatDPTree()
+multipleNotInTheMiddleTestStatDPTree()
+oneNotAtTheBeginningTestStatDPTree()
+multipleNotAtTheBeginningTestStatDPTree()
+oneNotAtTheEndTestStatDPTree()
+multipleNotAtTheEndTestStatDPTree()
+multipleNotBeginAndEndTestStatDPTree()
+testWithMultipleNotAtBeginningMiddleEndStatDPTree()
+testWithMultipleNotAtBeginningMiddleEnd2StatDPTree()
+
+# consumption policies tests
+singleType1PolicyPatternSearchTest()
+singleType2PolicyPatternSearchTest()
+contiguousPolicyPatternSearchTest()
+contiguousPolicy2PatternSearchTest()
+freezePolicyPatternSearchTest()
+freezePolicy2PatternSearchTest()
+
+# storage tests
+sortedStorageTest()
+run_storage_tests()
 
 # multi-pattern tests
 leafIsRoot()
@@ -151,8 +151,30 @@ samePatternSharingRootFullSharing()
 severalPatternShareSubtreeFullSharing()
 notInTheBeginningShareFullSharing()
 multipleParentsForInternalNodeFullSharing()
-# #
-# # # event occurrence probability tests
+
+# adaptive multi-pattern tests
+adaptiveLeafIsRoot()
+adaptiveDistinctPatterns()
+adaptiveThreePatternsTest()
+adaptiveSamePatternDifferentTimeStamps()
+adaptiveRootAndInner()
+adaptiveOnePatternIncludesOther()
+adaptiveSamePatternSharingRoot()
+adaptiveSeveralPatternShareSubtree()
+adaptiveNotInTheBeginningShare()
+adaptiveMultipleParentsForInternalNode()
+adaptiveLeafIsRootFullSharing()
+adaptiveDistinctPatternsFullSharing()
+adaptiveThreePatternsTestFullSharing()
+adaptiveSamePatternDifferentTimeStampsFullSharing()
+adaptiveRootAndInnerFullSharing()
+adaptiveOnePatternIncludesOtherFullSharing()
+adaptiveSamePatternSharingRootFullSharing()
+adaptiveSeveralPatternShareSubtreeFullSharing()
+adaptiveNotInTheBeginningShareFullSharing()
+adaptiveMultipleParentsForInternalNodeFullSharing()
+
+# event occurrence probability tests
 test.EventProbabilityTests.oneArgumentsearchTest()
 test.EventProbabilityTests.oneArgumentsearchTestKleeneClosure()
 test.EventProbabilityTests.simpleNotTest()
@@ -178,8 +200,8 @@ dpLdNestedComplexStructuralTest()
 zstreamOrdNestedComplexStructuralTest()
 KCNestedStructuralTest()
 
-#
-# # Optimizer tests
+
+# Optimizer tests
 greedyInvariantOptimizerTreeChangeFailTest_1()
 greedyInvariantOptimizerTreeChangeFailTest_2()
 greedyInvariantOptimizerTreeChangeTest_1()
@@ -187,8 +209,8 @@ zstreamInvariantOptimizerTreeChangeFailTest_1()
 zstreamInvariantOptimizerTreeChangeTest_1()
 zstreamInvariantOptimizerTreeChangeTest_2()
 
-# # # Adaptivity tests
-# # trivial evaluation with trivial optimizer
+# Adaptivity tests
+# trivial evaluation with trivial optimizer
 simple_1()
 googleAscendPatternSearchTest_1()
 amazonInstablePatternSearchTest_1()
