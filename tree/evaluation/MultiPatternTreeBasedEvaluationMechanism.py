@@ -1,11 +1,12 @@
 from datetime import timedelta
-from typing import Dict
+from typing import Dict, List, Set
 from adaptive.optimizer.Optimizer import Optimizer
 from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from base.Event import Event
 from base.Pattern import Pattern
 from plan.TreePlan import TreePlan
 from stream.Stream import OutputStream
+from tree.MultiPatternTree import MultiPatternTree
 from tree.PatternMatchStorage import TreeStorageParameters
 from tree.evaluation.TreeBasedEvaluationMechanism import TreeBasedEvaluationMechanism
 from tree.nodes import Node
@@ -16,7 +17,7 @@ from tree.nodes.UnaryNode import UnaryNode
 
 class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
 
-    def __init__(self, tree, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
+    def __init__(self, tree: MultiPatternTree, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                  storage_params: TreeStorageParameters,
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,
@@ -35,7 +36,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
             self._tree_update(changed_patterns_ids, old_leaves)
 
     @staticmethod
-    def _get_all_old_events(leaves):
+    def _get_all_old_events(leaves: set):
         """
         Get a list of all relevant old events that were played on the old tree.
         """
@@ -47,7 +48,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
 
         return list_events
 
-    def _tree_update(self, changed_patterns_ids, old_leaves):
+    def _tree_update(self, changed_patterns_ids: Set[int], old_leaves: Set[LeafNode]):
         """
         Find the intersection of the new_tree and the old tree.
         The intersection remains and updates the parts of the forest that are actually new
@@ -59,7 +60,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
 
         self.__flush_duplicate_matches(changed_output_nodes)
 
-    def __propagate_relevant_data(self, changed_output_nodes, changed_patterns_ids, old_leaves):
+    def __propagate_relevant_data(self, changed_output_nodes: list, changed_patterns_ids: Set[int], old_leaves: Set[LeafNode]):
         """
         Propagates events and partial matches on changed (single)trees
         """
@@ -75,14 +76,15 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
 
         self.__propagate_events_from_saved_leaves(leaves_to_save, old_leaves, new_event_types_listeners)
 
-    def __propagate_events_from_saved_leaves(self, leaves_to_save, old_leaves, new_event_types_listeners):
+    def __propagate_events_from_saved_leaves(self, leaves_to_save: Set[LeafNode], old_leaves: Set[LeafNode],
+                                             new_event_types_listeners: dict):
         old_event_types = {old_leaf.get_event_type() for old_leaf in leaves_to_save}
         old_relevant_leaves = {leaf for leaf in old_leaves if leaf.get_event_type() in old_event_types}
         old_events = self._get_all_old_events(old_relevant_leaves)
 
         self._play_old_events_on_tree(old_events, new_event_types_listeners)
 
-    def __flush_duplicate_matches(self, changed_output_nodes):
+    def __flush_duplicate_matches(self, changed_output_nodes: list):
         """
         To avoid duplicate matches, flushes the matches from the new tree that have already been written.
         """
@@ -93,7 +95,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
     def _play_new_event_on_tree(self, event: Event, matches: OutputStream):
         self._play_new_event(event, self._event_types_listeners)
 
-    def _play_new_event(self, event: Event, event_types_listeners):
+    def _play_new_event(self, event: Event, event_types_listeners: dict):
         """
         Lets the tree handle the event
         """
@@ -107,7 +109,7 @@ class MultiPatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism):
         for match in self._tree.get_matches():
             matches.add_item(match)
 
-    def __propagate_existing_partial_matches(self, node: Node, unchanged_patterns, detected_nodes: set,
+    def __propagate_existing_partial_matches(self, node: Node, unchanged_patterns: set, detected_nodes: set,
                                              leaves_to_save: set,
                                              new_event_types_listeners: dict):
         """

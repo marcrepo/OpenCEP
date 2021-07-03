@@ -163,7 +163,7 @@ class SelectivityStatistics(Statistics):
 
         return copy.deepcopy(selectivity_matrix)
 
-    def __compute_selectivity(self, atomic_conditions_id):
+    def __compute_selectivity(self, atomic_conditions_id: List[str]):
         selectivity = 1.0
         for atomic_condition_id in atomic_conditions_id:
             numerator = self.__atomic_condition_to_success_map[atomic_condition_id]

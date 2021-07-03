@@ -1,10 +1,6 @@
 from datetime import timedelta
 
-from adaptive.optimizer.OptimizerFactory import OptimizerParameters, \
-    MultiPatternStatisticsDeviationAwareOptimizerParameters
-from adaptive.optimizer.OptimizerTypes import OptimizerTypes
-from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorParameters
-from base.MultiPattern import MultiPattern
+from adaptive.optimizer.OptimizerFactory import MultiPatternStatisticsDeviationAwareOptimizerParameters
 from base.Pattern import Pattern
 from base.PatternStructure import AndOperator, SeqOperator, PrimitiveEventStructure, NegationOperator
 from condition.BaseRelationCondition import GreaterThanCondition, SmallerThanCondition, GreaterThanEqCondition, \

@@ -6,6 +6,7 @@ from tree.PatternMatchStorage import TreeStorageParameters
 from base.PatternMatch import PatternMatch
 from tree.Tree import Tree
 from tree.nodes.NegationNode import NegationNode
+from tree.nodes.Node import Node
 
 
 class MultiPatternTree:
@@ -89,7 +90,7 @@ class MultiPatternTree:
             return False
         return pattern.confidence is None or match.probability is None or match.probability >= pattern.confidence
 
-    def get_matches_from_output_node(self,  output_node):
+    def get_matches_from_output_node(self,  output_node: Node):
         """
         Returns the matches from specific output nodes.
         """
@@ -134,5 +135,5 @@ class MultiPatternTree:
             # the pending matches were released and have hopefully reached the roots
         return self.get_matches()
 
-    def get_output_nodes(self, patterns_ids):
+    def get_output_nodes(self, patterns_ids: set):
         return [self.__id_to_output_node_map[pattern_id] for pattern_id in patterns_ids]

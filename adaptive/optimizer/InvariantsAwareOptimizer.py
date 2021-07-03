@@ -16,7 +16,7 @@ class InvariantsAwareOptimizer(Optimizer):
         super().__init__(patterns, tree_plan_builder, is_adaptivity_enabled, statistics_collector)
         self._invariants = None
 
-    def _should_optimize(self, new_statistics: dict, pattern):
+    def _should_optimize(self, new_statistics: dict, pattern: Pattern):
         return self._invariants is None or self._invariants.is_invariants_violated(new_statistics, self._patterns[0])
 
     def _build_new_plan(self, new_statistics: dict, pattern: Pattern):

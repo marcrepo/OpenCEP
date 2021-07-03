@@ -24,13 +24,13 @@ class StatisticsFactory:
 
     @staticmethod
     def __extract_statistics(patterns, stat_type):
-        items_to_item_map = {}
+        item_to_statistics_map = {}
         for pattern in patterns:
             if pattern.statistics and stat_type in pattern.statistics:
                 pattern_statistics = copy.deepcopy(pattern.statistics)
                 for item, statistics in pattern_statistics[stat_type].items():
-                    if item not in items_to_item_map:
-                        items_to_item_map[item] = statistics
+                    if item not in item_to_statistics_map:
+                        item_to_statistics_map[item] = statistics
 
-        return items_to_item_map
+        return item_to_statistics_map
 

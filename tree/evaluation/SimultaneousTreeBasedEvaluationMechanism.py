@@ -17,7 +17,7 @@ class SimultaneousTreeBasedEvaluationMechanism(SinglePatternTreeBasedEvaluationM
     Runs the old tree and the new tree in parallel as long as the events affect the matches from the trees differently,
     after that, replaces the old tree with the new tree.
     """
-    def __init__(self, tree,  pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
+    def __init__(self, tree: Tree,  pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                  storage_params: TreeStorageParameters,
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,

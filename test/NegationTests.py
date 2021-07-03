@@ -13,6 +13,10 @@ from plan.negation.NegationAlgorithmTypes import NegationAlgorithmTypes
 
 
 def generate_statistics(pattern):
+    """
+    selectivity looks like - {condition: (success, total)}
+    arrival_rates looks like - {event type: arrival rates statistics}
+    """
     primitive_events = pattern.get_primitive_events()
     atomic_conditions = set()
     for i in range(len(primitive_events)):
@@ -286,7 +290,6 @@ def simpleNotTestStat(create_test_file=False):
         ),
         timedelta(minutes=5)
     )
-    # pattern.set_statistics(generate_statistics(pattern.count_primitive_events()))
     pattern.set_statistics(generate_statistics(pattern))
     eval_params = TreeBasedEvaluationMechanismParameters(
         optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,

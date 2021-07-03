@@ -15,7 +15,7 @@ from tree.nodes.LeafNode import LeafNode
 
 class SinglePatternTreeBasedEvaluationMechanism(TreeBasedEvaluationMechanism, ABC):
 
-    def __init__(self, tree, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
+    def __init__(self, tree: Tree, pattern_to_tree_plan_map: Dict[Pattern, TreePlan],
                  storage_params: TreeStorageParameters,
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,

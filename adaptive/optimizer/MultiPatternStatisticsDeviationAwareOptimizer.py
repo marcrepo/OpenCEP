@@ -7,12 +7,16 @@ from base.Pattern import Pattern
 from plan.TreePlan import TreePlan, TreePlanNode, TreePlanLeafNode, TreePlanNestedNode, TreePlanUnaryNode, \
     TreePlanBinaryNode
 from plan.TreePlanBuilder import TreePlanBuilder
+from plan.multi.TreePlanMerger import TreePlanMerger
 
 
 class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOptimizer):
-
-    def __init__(self, patterns: List[Pattern], recursive_traversal_tree_plan_merger, tree_plan_builder: TreePlanBuilder,
-                 is_adaptivity_enabled: bool,
+    """
+    Represents the Multi Pattern optimizer.
+    For every pattern(single tree in the forest), monitors statistics deviations from their latest observed values.
+    """
+    def __init__(self, patterns: List[Pattern], recursive_traversal_tree_plan_merger: TreePlanMerger,
+                 tree_plan_builder: TreePlanBuilder, is_adaptivity_enabled: bool,
                  type_to_deviation_aware_functions_map, statistics_collector: StatisticsCollector,
                  patterns_changed_threshold: float):
         super().__init__(patterns, tree_plan_builder, is_adaptivity_enabled, type_to_deviation_aware_functions_map,
@@ -63,7 +67,7 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         self.__connected_graph_to_changed_patterns_num[connected_graph_id] += 1
 
         # Before creating new trees, find intersections with other trees
-        pattern_ids_intersections, known_unique_tree_plan_nodes = self.__find_intersections(pattern)
+        intersections_pattern_ids_before, known_unique_tree_plan_nodes = self.__find_intersections(pattern)
 
         self.__save_known_unique_tree_plan_nodes(known_unique_tree_plan_nodes, pattern)
 
@@ -71,8 +75,8 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
         tree_plan = self._build_new_plan(new_statistics, pattern)
 
         tree_plan_node = tree_plan.root
-        still_merged = self.__get_still_merged(tree_plan_node, pattern_ids_intersections,
-                                                   known_unique_tree_plan_nodes)
+        still_merged = self.__merge(tree_plan_node, intersections_pattern_ids_before,
+                                    known_unique_tree_plan_nodes)
 
         new_tree_plan = TreePlan(tree_plan_node)
         self.__propagate_pattern_id(pattern.id, new_tree_plan)
@@ -80,24 +84,27 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
 
         self.__changed_patterns.add(pattern.id)
 
-        to_rebuild = pattern_ids_intersections - still_merged - self.__changed_patterns
+        to_rebuild = intersections_pattern_ids_before - still_merged - self.__changed_patterns
         for pattern_id_to_rebuild in to_rebuild:
             pattern_to_rebuild = self.__pattern_id_to_pattern_map[pattern_id_to_rebuild]
             pattern_to_rebuild_statistics = self._statistics_collector.get_pattern_statistics(pattern_to_rebuild)
             self.__optimize(pattern_to_rebuild, pattern_to_rebuild_statistics)
 
-    def __get_still_merged(self, tree_plan_node: TreePlanNode, intersection_pattern_ids: set,
-                           known_unique_tree_plan_nodes: dict):
+    def __merge(self, tree_plan_node: TreePlanNode, intersection_pattern_ids_before: set,
+                known_unique_tree_plan_nodes: dict):
         """
-        Checks if the current tree intersects trees in intersection_pattern_ids
+        merge tree plan to nodes in known_unique_tree_plan_nodes dictionary.
+        Return patterns ids that merged with the tree plan.
+        Currently, use the traverse_tree_plan_function to try and merge.
+        It could be any merge algorithm
         """
         still_merged = set()
-        for intersection_pattern_id in intersection_pattern_ids:
+        for intersection_pattern_id in intersection_pattern_ids_before:
             is_merged = [False]
-            tree_plan_node = self.__recursive_traversal_tree_plan_merger.traverse_tree_plan(tree_plan_node,
-                                                                                            known_unique_tree_plan_nodes[
-                                                                                                intersection_pattern_id],
-                                                                                            is_merged)
+            _ = self.__recursive_traversal_tree_plan_merger.traverse_tree_plan(tree_plan_node,
+                                                                               known_unique_tree_plan_nodes[
+                                                                                intersection_pattern_id],
+                                                                               is_merged)
             if is_merged:
                 still_merged.add(intersection_pattern_id)
 
@@ -153,8 +160,6 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
                                  pattern_ids_intersections: set, pattern_id: int):
 
         pattern_intersections = current.get_pattern_ids()
-        # Because this remove, in the end of the day every node contain just id patterns that
-        # dont changed.
 
         self.__update_intersections(pattern_intersections, pattern_id, known_unique_tree_plan_nodes,
                                     pattern_ids_intersections, current)
@@ -181,6 +186,8 @@ class MultiPatternStatisticsDeviationAwareOptimizer(StatisticsDeviationAwareOpti
                                current):
 
         if pattern_intersections:
+            # Because this remove, in the end of the day every node contain just id patterns that
+            # dont changed.
             pattern_intersections.remove(pattern_id)
 
             for pattern_intersection_id in pattern_intersections:

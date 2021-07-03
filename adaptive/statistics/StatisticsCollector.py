@@ -32,5 +32,3 @@ class StatisticsCollector:
         if statistics_type in self.__statistics:
             self.__statistics[statistics_type].update(data)
 
-    def get_item_to_patterns(self, statistics_type: StatisticsTypes):
-        return self.__statistics[statistics_type].get_item_to_patterns()

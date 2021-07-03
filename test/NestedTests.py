@@ -1,11 +1,9 @@
 from adaptive.optimizer.OptimizerFactory import OptimizerParameters
 from adaptive.optimizer.OptimizerTypes import OptimizerTypes
 from adaptive.statistics.Statistics import ArrivalRatesStatistics
-from adaptive.statistics.Statistics import SelectivityStatistics
 import adaptive
 from unittest.mock import patch
 from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorParameters, StatisticsCollectorFactory
-from test.EvalTestsDefaults import DEFAULT_TESTING_STATISTICS_COLLECTOR_SELECTIVITY_AND_ARRIVAL_RATES_STATISTICS
 from test.NegationTests import generate_statistics
 from test.testUtils import *
 from plan.LeftDeepTreeBuilders import *

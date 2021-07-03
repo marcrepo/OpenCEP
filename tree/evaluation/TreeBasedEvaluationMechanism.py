@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict
 from base.DataFormatter import DataFormatter
 from base.Event import Event
-from plan.TreePlan import TreePlan
 from stream.Stream import InputStream, OutputStream
 from misc.Utils import *
 from tree.PatternMatchStorage import TreeStorageParameters
@@ -12,6 +10,7 @@ from adaptive.statistics import StatisticsCollector
 from tree.Tree import Tree
 from datetime import timedelta
 from adaptive.optimizer import Optimizer
+from tree.nodes.LeafNode import LeafNode
 
 
 class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
@@ -19,7 +18,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
     An implementation of the tree-based evaluation mechanism.
     """
 
-    def __init__(self, tree, storage_params: TreeStorageParameters,
+    def __init__(self, tree: Tree or MultiPatternTree, storage_params: TreeStorageParameters,
                  statistics_collector: StatisticsCollector = None,
                  optimizer: Optimizer = None,
                  statistics_update_time_window: timedelta = None):
@@ -107,7 +106,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
         return event_types_listeners
 
     @staticmethod
-    def _register_leaf(leaf, event_types_listeners):
+    def _register_leaf(leaf: LeafNode, event_types_listeners: dict):
         event_type = leaf.get_event_type()
         if event_type in event_types_listeners.keys():
             event_types_listeners[event_type].append(leaf)
@@ -127,7 +126,7 @@ class TreeBasedEvaluationMechanism(EvaluationMechanism, ABC):
         raise NotImplementedError()
 
     @staticmethod
-    def _play_old_events_on_tree(events, event_types_listeners):
+    def _play_old_events_on_tree(events: List[Event], event_types_listeners: dict):
         """
         These events dont need to ask about freeze
         """
