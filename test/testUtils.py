@@ -269,6 +269,8 @@ def runMultiTest(test_name, multi_pattern: MultiPattern, createTestFile = False,
     else:
         events = events.duplicate()
 
+    expected_file_name = "%s" % expected_file_name.split('|')[0]
+
     listShort = ["multiplePatterns", "distinctPatterns", "MultipleNotBeginningShare", "multipleParentsForInternalNode"]
     listHalfShort = ["onePatternIncludesOther", "threeSharingSubtrees"]
     listCustom = []
@@ -291,7 +293,7 @@ def runMultiTest(test_name, multi_pattern: MultiPattern, createTestFile = False,
     cep = CEP(patterns, eval_mechanism_params)
 
     base_matches_directory = os.path.join(absolutePath, 'test', 'Matches')
-    output_file_name = "%sMatches.txt" % test_name
+    output_file_name = "%sMatches.txt" % test_name.split('|')[0]
     expected_output_file_name = "%sMatches.txt" % expected_file_name
     actual_matches_path = os.path.join(base_matches_directory, output_file_name)
     expected_matches_path = os.path.join(absolutePath, 'test', 'TestsExpected', expected_output_file_name)
@@ -315,7 +317,7 @@ def runMultiTest(test_name, multi_pattern: MultiPattern, createTestFile = False,
             exp_set[int(match.partition(':')[0]) - 1].add(match.strip()[match.index(' ') + 1:])
 
     res = (exp_set == match_set)
-    print("Test %s result: %s, Time Passed: %s" % (test_name,
+    print("Test %s result: %s, Time Passed: %s" % (test_name.replace('|', ''),
           "Succeeded" if res else "Failed", running_time))
     runTest.over_all_time += running_time
     if res:
