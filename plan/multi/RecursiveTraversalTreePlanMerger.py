@@ -6,7 +6,6 @@ from plan.multi.TreePlanMerger import TreePlanMerger
 
 
 class RecursiveTraversalTreePlanMerger(TreePlanMerger):
-
     """
     An abstract class for tree plan mergers functioning by recursively traversing the provided tree plans.
     """

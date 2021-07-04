@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Dict, List, Set
+from typing import Dict, Set
 from adaptive.optimizer.Optimizer import Optimizer
 from adaptive.statistics.StatisticsCollector import StatisticsCollector
 from base.Event import Event
