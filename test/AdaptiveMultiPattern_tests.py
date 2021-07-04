@@ -66,7 +66,7 @@ def adaptiveLeafIsRoot(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("FirstMultiPattern_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
+    runMultiTest("FirstMultiPattern|_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
 
 
 """
@@ -100,7 +100,7 @@ def adaptiveDistinctPatterns(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("BigMultiPattern_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
+    runMultiTest("BigMultiPattern|_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
 
 
 """
@@ -149,7 +149,7 @@ def adaptiveThreePatternsTest(createTestFile=False):
 
     patterns = [pattern1, pattern2, pattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("ThreePatternTest_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
+    runMultiTest("ThreePatternTest|_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
 
 
 """
@@ -177,7 +177,7 @@ def adaptiveSamePatternDifferentTimeStamps(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("RootAndInner", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
+    runMultiTest("RootAndInner|_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
 
 
 """
@@ -209,7 +209,7 @@ def adaptiveRootAndInner(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("DifferentTimeStamp_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
+    runMultiTest("DifferentTimeStamp|_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
 
 
 """
@@ -240,7 +240,7 @@ def adaptiveOnePatternIncludesOther(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("onePatternIncludesOther_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
+    runMultiTest("onePatternIncludesOther|_adaptive", multi_pattern, createTestFile, leaf_sharing_eval_mechanism_params)
 
 
 """
@@ -287,7 +287,7 @@ def adaptiveSamePatternSharingRoot(createTestFile=False):
 
     patterns = [hierarchyPattern, hierarchyPattern2, hierarchyPattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest('hierarchyMultiPattern_adaptive', multi_pattern , createTestFile,
+    runMultiTest('hierarchyMultiPattern|_adaptive', multi_pattern , createTestFile,
                  leaf_sharing_eval_mechanism_params)
 
 
@@ -327,7 +327,7 @@ def adaptiveSeveralPatternShareSubtree(createTestFile=False):
 
     patterns = [pattern, pattern2, pattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("threeSharingSubtrees_adaptive", multi_pattern, createTestFile,
+    runMultiTest("threeSharingSubtrees|_adaptive", multi_pattern, createTestFile,
                  leaf_sharing_eval_mechanism_params)
 
 
@@ -372,7 +372,7 @@ def adaptiveNotInTheBeginningShare(createTestFile=False):
 
     patterns = [pattern1, pattern2, pattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("MultipleNotBeginningShare_adaptive", multi_pattern, createTestFile,
+    runMultiTest("MultipleNotBeginningShare|_adaptive", multi_pattern, createTestFile,
                  leaf_sharing_eval_mechanism_params)
 
 
@@ -430,7 +430,7 @@ def adaptiveMultipleParentsForInternalNode(createTestFile=False):
 
     patterns = [pattern1, pattern2, pattern3, pattern4]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("multipleParentsForInternalNode_adaptive", multi_pattern, createTestFile,
+    runMultiTest("multipleParentsForInternalNode|_adaptive", multi_pattern, createTestFile,
                  leaf_sharing_eval_mechanism_params)
 
 
@@ -458,7 +458,7 @@ def adaptiveLeafIsRootFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("FirstMultiPatternFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("FirstMultiPatternFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="FirstMultiPattern")
 
@@ -494,7 +494,7 @@ def adaptiveDistinctPatternsFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("BigMultiPatternFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("BigMultiPatternFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="BigMultiPattern")
 
@@ -545,7 +545,7 @@ def adaptiveThreePatternsTestFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2, pattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("ThreePatternTestFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("ThreePatternTestFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="ThreePatternTest")
 
@@ -575,7 +575,7 @@ def adaptiveRootAndInnerFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("RootAndInnerFullSharing_adaptive", multi_pattern, createTestFile, subtree_sharing_eval_mechanism_params,
+    runMultiTest("RootAndInnerFullSharing|_adaptive", multi_pattern, createTestFile, subtree_sharing_eval_mechanism_params,
                  expected_file_name="RootAndInner")
 
 
@@ -608,7 +608,7 @@ def adaptiveSamePatternDifferentTimeStampsFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("DifferentTimeStampFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("DifferentTimeStampFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="DifferentTimeStamp")
 
@@ -641,7 +641,7 @@ def adaptiveOnePatternIncludesOtherFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("onePatternIncludesOtherFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("onePatternIncludesOtherFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="onePatternIncludesOther")
 
@@ -690,7 +690,7 @@ def adaptiveSamePatternSharingRootFullSharing(createTestFile=False):
 
     patterns = [hierarchyPattern, hierarchyPattern2, hierarchyPattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest('hierarchyMultiPatternFullSharing_adaptive', multi_pattern,
+    runMultiTest('hierarchyMultiPatternFullSharing|_adaptive', multi_pattern,
                  createTestFile, subtree_sharing_eval_mechanism_params,
                  expected_file_name='hierarchyMultiPattern')
 
@@ -731,7 +731,7 @@ def adaptiveSeveralPatternShareSubtreeFullSharing(createTestFile=False):
 
     patterns = [pattern, pattern2, pattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("threeSharingSubtreesFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("threeSharingSubtreesFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="threeSharingSubtrees")
 
@@ -777,7 +777,7 @@ def adaptiveNotInTheBeginningShareFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2, pattern3]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("MultipleNotBeginningShareFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("MultipleNotBeginningShareFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="MultipleNotBeginningShare")
 
@@ -835,7 +835,7 @@ def adaptiveMultipleParentsForInternalNodeFullSharing(createTestFile=False):
 
     patterns = [pattern1, pattern2, pattern3, pattern4]
     multi_pattern = MultiPattern(patterns)
-    runMultiTest("multipleParentsForInternalNodeFullSharing_adaptive", multi_pattern, createTestFile,
+    runMultiTest("multipleParentsForInternalNodeFullSharing|_adaptive", multi_pattern, createTestFile,
                  subtree_sharing_eval_mechanism_params,
                  expected_file_name="multipleParentsForInternalNode")
 
