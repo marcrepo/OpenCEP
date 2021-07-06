@@ -95,14 +95,6 @@ class EvaluationMechanismFactory:
                                     for pattern in patterns}
         runtime_statistics_collector = statistics_collector if optimizer.is_adaptivity_enabled() else None
 
-
-        event_name_to_event_index = {leaf.event_name: leaf.event_index for leaf in pattern_to_tree_plan_map[patterns[0]].root.get_leaves()}
-        leaves = pattern_to_tree_plan_map[patterns[1]].root.get_leaves()
-        for leaf in leaves:
-            leaf.event_index=event_name_to_event_index[leaf.event_name]
-
-
-
         if len(patterns) > 1:
             # a multi-pattern case - try to merge the tree plans
             pattern_to_tree_plan_map = EvaluationMechanismFactory.__merge_tree_plans(

@@ -23,7 +23,7 @@ class Optimizer(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def build_new_plan(self, new_statistics: dict, pattern: Pattern,mcs=None):
+    def build_new_plan(self, new_statistics: dict, pattern: Pattern):
         """
         Builds and returns a new evaluation plan based on the given statistics.
         """
@@ -36,7 +36,7 @@ class Optimizer(ABC):
         return self.__is_adaptivity_enabled
 
     def build_initial_plan(self, initial_statistics: dict, cost_model_type: TreeCostModels,
-                           pattern: Pattern,mcs=None):
+                           pattern: Pattern):
         """
         initializes the Statistic objects with initial statistics if such statistics exists,
         else, applies the default algorithm that does not require statistics.
@@ -45,10 +45,11 @@ class Optimizer(ABC):
         non_prior_tree_plan_builder = self._build_non_prior_tree_plan_builder(cost_model_type, pattern)
         if non_prior_tree_plan_builder is not None:
             self._tree_plan_builder, temp_tree_plan_builder = non_prior_tree_plan_builder, self._tree_plan_builder
-            initial_tree_plan = self.build_new_plan(initial_statistics, pattern,mcs)
+            initial_tree_plan = self.build_new_plan(initial_statistics, pattern)
             self._tree_plan_builder = temp_tree_plan_builder
         else:
-            initial_tree_plan = self.build_new_plan(pattern.statistics, pattern, mcs)
+            #initial_tree_plan = self.build_new_plan(initial_statistics, pattern)
+            initial_tree_plan = self.build_new_plan(pattern.statistics, pattern)
         return initial_tree_plan
 
     @staticmethod
@@ -74,8 +75,8 @@ class TrivialOptimizer(Optimizer):
     def should_optimize(self, new_statistics: dict, pattern: Pattern):
         return True
 
-    def build_new_plan(self, new_statistics: dict, pattern: Pattern,mcs=None):
-        tree_plan = self._tree_plan_builder.build_tree_plan(pattern, new_statistics,mcs)
+    def build_new_plan(self, new_statistics: dict, pattern: Pattern):
+        tree_plan = self._tree_plan_builder.build_tree_plan(pattern, new_statistics)
         return tree_plan
 
 
@@ -96,7 +97,7 @@ class StatisticsDeviationAwareOptimizer(Optimizer):
                 return True
         return False
 
-    def build_new_plan(self, new_statistics: dict, pattern: Pattern,mcs=None):
+    def build_new_plan(self, new_statistics: dict, pattern: Pattern):
         self.__prev_statistics = new_statistics
         tree_plan = self._tree_plan_builder.build_tree_plan(pattern, new_statistics)
         return tree_plan

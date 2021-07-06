@@ -17,7 +17,7 @@ class DynamicProgrammingBushyTreeBuilder(TreePlanBuilder):
     """
     Creates a bushy tree using a dynamic programming algorithm.
     """
-    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode],mcs=None):
+    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode]):
         if StatisticsTypes.ARRIVAL_RATES in statistics and \
                 StatisticsTypes.SELECTIVITY_MATRIX in statistics and \
                 len(statistics) == 2:
@@ -50,7 +50,6 @@ class DynamicProgrammingBushyTreeBuilder(TreePlanBuilder):
                 new_tree_ = TreePlanBuilder._instantiate_binary_node(pattern, tree1_, tree2_)
                 new_cost_ = self._get_plan_cost(pattern, new_tree_, statistics)
                 new_left_ = items.difference({subset})
-                #todo comment: maybe bug here should be a regular set and not frozen set
                 sub_trees[subset] = new_tree_, new_cost_, new_left_
                 # find the best topology based on previous topologies for smaller subsets.
                 for set1, set2 in disjoint_sets_iter:
@@ -70,7 +69,7 @@ class ZStreamTreeBuilder(TreePlanBuilder):
     """
     Creates a bushy tree using ZStream algorithm.
     """
-    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode],mcs=None):
+    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode]):
         if StatisticsTypes.ARRIVAL_RATES in statistics and \
                 StatisticsTypes.SELECTIVITY_MATRIX in statistics and \
                 len(statistics) == 2:

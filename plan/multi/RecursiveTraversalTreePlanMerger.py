@@ -48,6 +48,14 @@ class RecursiveTraversalTreePlanMerger(TreePlanMerger, ABC):
         """
         for candidate_node in known_unique_tree_plan_nodes:
             if self._are_suitable_for_share(candidate_node, node):
+                """if is_local_search:
+                    if isinstance(candidate_node, TreePlanLeafNode):
+                        
+                    elif isinstance(candidate_node,TreePlanBinaryNode):
+
+                    else:
+                        #nested node case"""
+                candidate_node.is_shared = True
                 return candidate_node
         return None
 

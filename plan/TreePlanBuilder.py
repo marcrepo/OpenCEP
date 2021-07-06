@@ -24,7 +24,7 @@ class TreePlanBuilder(ABC):
         self.__cost_model = TreeCostModelFactory.create_cost_model(cost_model_type)
         self.__negation_algorithm = NegationAlgorithmFactory.create_negation_algorithm(negation_algorithm_type)
 
-    def build_tree_plan(self, pattern: Pattern, statistics: Dict,mcs=None):
+    def build_tree_plan(self, pattern: Pattern, statistics: Dict):
         """
         Creates a tree-based evaluation plan for the given pattern.
         """
@@ -33,17 +33,18 @@ class TreePlanBuilder(ABC):
         pattern_positive_statistics = TreePlanBuilder.extract_positive_statistics(pattern, statistics_copy)
         if any(not isinstance(arg, PrimitiveEventStructure) for arg in pattern_positive_args):
             # the pattern contains nested parts and should be treated accordingly
-            nested_topology, _ = self.__create_nested_topology(pattern, pattern_positive_statistics,mcs)
+            nested_topology, modified_statistics = self.__create_nested_topology(pattern, pattern_positive_statistics)
             positive_root = TreePlanBuilder.__adjust_nested_indices(pattern, nested_topology)
         else:
             # the pattern is entirely flat
-            positive_root = self._create_tree_topology(pattern, pattern_positive_statistics, self.__init_tree_leaves(pattern),mcs)
+            positive_root = self._create_tree_topology(pattern, pattern_positive_statistics, self.__init_tree_leaves(pattern))
         if isinstance(pattern.positive_structure, UnaryStructure):
             # an edge case where the topmost operator is a unary operator
             positive_root = self._instantiate_unary_node(pattern, positive_root)
         root = self.__negation_algorithm.handle_pattern_negation(pattern, statistics_copy, positive_root)
         pattern_condition = deepcopy(pattern.condition)  # copied since apply_condition modifies its input parameter
         root.apply_condition(pattern_condition)
+        pattern.statistics = modified_statistics
         return TreePlan(root)
 
     @staticmethod
@@ -116,11 +117,11 @@ class TreePlanBuilder(ABC):
         elif isinstance(root, TreePlanNestedNode):
             return root if root.nested_event_index == index else None
         elif isinstance(root, TreePlanLeafNode):
-            return root if root.event_index == index else None
+            return root if root.original_event_index == index else None
         else:
             raise Exception("Illegal Root")
 
-    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode],mcs=None):
+    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode]):
         """
         An abstract method for creating the actual tree topology.
         This method works on the flat (not nested) case.
@@ -141,7 +142,7 @@ class TreePlanBuilder(ABC):
             if nested_topologies is None or nested_topologies[i] is None:
                 # the current argument can either be a PrimitiveEventStructure or an UnaryOperator surrounding it
                 event_structure = arg if isinstance(arg, PrimitiveEventStructure) else arg.child
-                new_leaf = TreePlanLeafNode(i, event_structure.type, event_structure.name,None)
+                new_leaf = TreePlanLeafNode(i, event_structure.type, event_structure.name)
             else:
                 nested_topology = nested_topologies[i].sub_tree_plan \
                     if isinstance(nested_topologies[i], TreePlanNestedNode) else nested_topologies[i]
@@ -153,7 +154,7 @@ class TreePlanBuilder(ABC):
             leaves.append(new_leaf)
         return leaves
 
-    def __create_nested_topology(self, pattern: Pattern, statistics: Dict,mcs=None):
+    def __create_nested_topology(self, pattern: Pattern, statistics: Dict):
         """
         A recursive method for creating a tree topology for the nested case.
         """
@@ -161,18 +162,7 @@ class TreePlanBuilder(ABC):
             self.__extract_nested_pattern(pattern, statistics)
         tree_topology = self._create_tree_topology(pattern, modified_statistics,
                                                    self.__init_tree_leaves(pattern, nested_topologies,
-                                                                           nested_args, nested_cost),mcs)
-        return tree_topology, modified_statistics
-
-    def create_nested_topology(self, pattern: Pattern, statistics: Dict,mcs=None):
-        """
-        A recursive method for creating a tree topology for the nested case.
-        """
-        pattern, modified_statistics, nested_topologies, nested_args, nested_cost = \
-            self.__extract_nested_pattern(pattern, statistics)
-        tree_topology = self._create_tree_topology(pattern, modified_statistics,
-                                                   self.__init_tree_leaves(pattern, nested_topologies,
-                                                                           nested_args, nested_cost),mcs)
+                                                                           nested_args, nested_cost))
         return tree_topology, modified_statistics
 
     def _get_plan_cost(self, pattern: Pattern, plan: TreePlanNode, statistics: Dict):

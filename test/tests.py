@@ -275,7 +275,7 @@ googleAmazonLowPatternSearchTest_8()
 """
 #two_and_operator()
 #seqABC_seqACB_MPG()
-#nested_And()
+nested_And_2()
 #seq_resarch()
 #one_pattern_inside_other()
 #seqABC_seqACB()
@@ -283,7 +283,7 @@ googleAmazonLowPatternSearchTest_8()
 #dpBPatternSearchTestTomCheck()
 #local_search_test()
 #new_cost_machnizem()
-seq_resarch_nested()
+#seq_resarch_nested()
 # benchmarks
 if INCLUDE_BENCHMARKS:
     sortedStorageBenchMarkTest()

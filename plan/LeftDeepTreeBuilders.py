@@ -15,39 +15,19 @@ from base.Pattern import Pattern
 from misc.LegacyStatistics import MissingStatisticsException
 from adaptive.statistics.StatisticsTypes import StatisticsTypes
 from plan.negation.NegationAlgorithmTypes import NegationAlgorithmTypes
-from base.PatternStructure import*
-
-from datetime import timedelta
-from condition.CompositeCondition import AndCondition
 
 
 class LeftDeepTreeBuilder(TreePlanBuilder):
     """
     An abstract class for left-deep tree builders.
     """
-    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode], mcs=None):
+    def _create_tree_topology(self, pattern: Pattern, statistics: Dict, leaves: List[TreePlanNode]):
         """
         Invokes an algorithm (to be implemented by subclasses) that builds an evaluation order of the operands, and
         converts it into a left-deep tree topology.
         """
-
         order = self._create_evaluation_order(pattern, statistics) if isinstance(pattern.positive_structure,
                                                                                  CompositeStructure) else [0]
-
-        # todo: reordering algo
-        if mcs:
-            if mcs[1] == pattern:
-                mcs_args = [arg for arg in mcs[0]]
-                #reordering algo
-                mcs_leaves_order = []
-                rest_of_pattern_leaves_order = []
-                for idx in order:
-                    if pattern.full_structure.args[idx] in mcs_args:
-                        mcs_leaves_order.append(idx)
-                    else:
-                        rest_of_pattern_leaves_order.append(idx)
-                order = mcs_leaves_order+rest_of_pattern_leaves_order
-
         return LeftDeepTreeBuilder._order_to_tree_topology(order, pattern, leaves)
 
     @staticmethod

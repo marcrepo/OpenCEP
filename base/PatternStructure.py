@@ -147,10 +147,10 @@ class AndOperator(CompositeStructure):
         return "AND(%s)" % (self.args,)
 
     def calc_structure_intersections(self, other):
-        self_events = set(self.args)
-        other_events = set(other.args)
+        self_events = set(arg for arg in self.args if type(arg) is PrimitiveEventStructure)
+        other_events = set(arg for arg in other.args if type(arg) is PrimitiveEventStructure)
         events_intersection = self_events.intersection(other_events)
-        return [events_intersection]
+        return [events_intersection] if len(events_intersection) > 1 else None
 
 
 class OrOperator(CompositeStructure):
@@ -173,9 +173,10 @@ class SeqOperator(CompositeStructure):
         Here could be return 2 structure intersections like in that case:
         seq(a,b,c)
         seq(a,c,b)  =====> seq(a,b) ,seq(a,c)
+        Intersection will not include nested patterns as explained in LocalSearch.Mpg class documentation.
         """
-        self_events = set(self.args)
-        other_events = set(other.args)
+        self_events = set(arg for arg in self.args if type(arg) is PrimitiveEventStructure)
+        other_events = set(arg for arg in other.args if type(arg) is PrimitiveEventStructure)
         self_mutual_event_list = [arg for arg in self.args if arg in other_events]
         other_mutual_event_list = [arg for arg in other.args if arg in self_events]
         if self_mutual_event_list == other_mutual_event_list:
@@ -196,7 +197,7 @@ class SeqOperator(CompositeStructure):
             if second_idx == second_len:
                 break
             result.append(event)
-        return result
+        return result if len(result)>1 else None
 
 
 

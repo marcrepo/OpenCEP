@@ -45,7 +45,7 @@ local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
 sub_tree_sharing_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,
                                          tree_plan_params=
-                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.TRIVIAL_LEFT_DEEP_TREE,
+                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.DYNAMIC_PROGRAMMING_LEFT_DEEP_TREE,
                               cost_model_type=TreeCostModels.INTERMEDIATE_RESULTS_TREE_COST_MODEL,
                               tree_plan_merger_type=MultiPatternTreePlanMergeApproaches.TREE_PLAN_SUBTREES_UNION,
                               tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
@@ -79,7 +79,26 @@ def two_and_operator(createTestFile=False):
     #mcs = should be AND(am, aa)
     return True
 
-#todo comment: can use runStructuralTest for testing mpg only(i do not think i can use it directly)
+#todo comment: can use runStructuralTest for testing mpg only(i do not think i can use it directly)-think about bushy when immplementing
+
+def one_pattern_inside_other(createTestFile=False):
+    pattern0 = Pattern(
+        AndOperator(SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "b")),
+                    PrimitiveEventStructure("BIDU", "d")),
+        AndCondition(
+            GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                 Variable("b", lambda x: x["Opening Price"])),
+            GreaterThanEqCondition(Variable("d", lambda x: x["Peak Price"]), 135)),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "b")),
+        AndCondition(
+            GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                 Variable("b", lambda x: x["Opening Price"]))),
+        timedelta(minutes=2)
+    )
+
 
 # SEQ(Z,OR(a,b),or(c,d)) AND(OR(a,b),Y,or(c,d)) ====> OR(a,b)
 def nested_OR_MPG(createTestFile=False):
@@ -166,17 +185,98 @@ def one_pattern_inside_other(createTestFile=False):
     # mcs = should be seq(a,b)
     return True
 
+    #todo: sharing of leaf, binary node, nested node cost calculation
+
+"""
+cost function tests
+"""
+def leaf_sharing(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "b")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "c")),
+        AndCondition(),
+        timedelta(minutes=2)
+    )
+
+    mpg = MPG(patterns=[pattern0, pattern1])
+    # mcs = should be seq(a,b)
+    return True
+
+def nestedNodeSharing(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("CBRL", "z"),
+                    SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b")),
+                    PrimitiveEventStructure("CBRL", "c")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("CBRL", "d"), SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b")),
+                    PrimitiveEventStructure("CBRL", "c")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
+    arrivalRates = [0.2, 0.2, 0.2, 0.2]
+    pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    selectivityMatrix = [[1.0, 1.0, 1.0,1.0],[1.0, 1.0, 1.0,1.0],
+                         [1.0, 1.0, 1.0,1.0],[1.0, 1.0, 1.0,1.0]]
+    arrivalRates = [0.2, 0.2, 0.2,0.2]
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("other", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
+
+
+def one_pattern_inside_other(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("AAPL", "d"), PrimitiveEventStructure("AMZN", "b"),
+                    PrimitiveEventStructure("AAPL", "a")),
+        AndCondition(
+            GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                 Variable("b", lambda x: x["Opening Price"]))),
+        timedelta(minutes=2)
+    )
+    pattern1 = Pattern(
+        AndOperator(SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AMZN", "b")),
+                    PrimitiveEventStructure("BIDU", "d")),
+        AndCondition(
+            GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
+                                 Variable("b", lambda x: x["Opening Price"])),
+            GreaterThanEqCondition(Variable("d", lambda x: x["Peak Price"]), 135)),
+        timedelta(minutes=5)
+    )
+
+    runMultiTest("other", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
+
+
+
+
+
+
+
+
+
 
 """
 full tests
 """
 
-# SEQ(Z,And(a,b),And(c,d)) SEQ(And(a,b),Y,And(c,d)) ====> And(a,b)
+# SEQ(Z,seq(a,b),And(c,d)) SEQ(seq(a,b),Y,And(c,d)) ====> seq(a,b)
 def nested_And(createTestFile=False):
     pattern0 = Pattern(
-        SeqOperator(PrimitiveEventStructure("AAPL", "z"), AndOperator(PrimitiveEventStructure("AAPL", "a"),
-                    PrimitiveEventStructure("AAPL", "b")),
-                    AndOperator(PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "d"))),
+        SeqOperator(PrimitiveEventStructure("CBRL", "z"), SeqOperator(PrimitiveEventStructure("MSFT", "a"),
+                    PrimitiveEventStructure("ORLY", "b")),
+                    AndOperator(PrimitiveEventStructure("CBRL", "c"), PrimitiveEventStructure("CBRL", "d"))),
         AndCondition(GreaterThanEqCondition(Variable("z", lambda x: x["Peak Price"]), 135),
                      GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
                                           Variable("b", lambda x: x["Opening Price"])),
@@ -186,9 +286,9 @@ def nested_And(createTestFile=False):
         timedelta(minutes=5)
     )
     pattern1 = Pattern(
-        SeqOperator(AndOperator(PrimitiveEventStructure("AAPL", "a"),
-                    PrimitiveEventStructure("AAPL", "b")),PrimitiveEventStructure("AAPL", "y"),
-                    AndOperator(PrimitiveEventStructure("AAPL", "c"), PrimitiveEventStructure("AAPL", "d"))),
+        SeqOperator(SeqOperator(PrimitiveEventStructure("MSFT", "a"),
+                    PrimitiveEventStructure("ORLY", "b")),PrimitiveEventStructure("CBRL", "y"),
+                    AndOperator(PrimitiveEventStructure("CBRL", "c"), PrimitiveEventStructure("CBRL", "d"))),
         AndCondition(GreaterThanEqCondition(Variable("y", lambda x: x["Peak Price"]), 135),
                      GreaterThanCondition(Variable("a", lambda x: x["Opening Price"]),
                                           Variable("b", lambda x: x["Opening Price"])),
@@ -198,7 +298,36 @@ def nested_And(createTestFile=False):
         timedelta(minutes=5)
     )
 
-    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params)
+    runMultiTest("other", [pattern0,pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params, eventStream=nasdaqEventStreamTiny)
+
+def nested_And_2(createTestFile=False):
+    pattern0 = Pattern(
+        SeqOperator(PrimitiveEventStructure("CBRL", "z"),
+                    SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b")),
+                    PrimitiveEventStructure("CBRL", "c")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        SeqOperator(PrimitiveEventStructure("CBRL", "d"), SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b")),
+                    PrimitiveEventStructure("CBRL", "c")),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
+    arrivalRates = [0.2, 0.2, 0.2, 0.2]
+    pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    selectivityMatrix = [[1.0, 1.0, 1.0,1.0],[1.0, 1.0, 1.0,1.0],
+                         [1.0, 1.0, 1.0,1.0],[1.0, 1.0, 1.0,1.0]]
+    arrivalRates = [0.2, 0.2, 0.2,0.2]
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("other", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
 
 def seq_resarch_nested(createTestFile=False):
     pattern0 = Pattern(
@@ -234,6 +363,8 @@ def seq_resarch(createTestFile=False):
     )
 
     runMultiTest("seq_resarch", [pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params,eventStream= nasdaqEventStreamTiny)
+
+#todo: seq(a,b) seq(a,b,c,d) => share all first pattern as nested even thouh it will not reutrn as "contained pattern" in the mpg.
 
 
 def new_cost_machnizem(createTestFile=False):
@@ -277,7 +408,7 @@ def new_cost_machnizem(createTestFile=False):
     pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
                              StatisticsTypes.ARRIVAL_RATES: arrivalRates})
 
-    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params)
+    runMultiTest("nested_And", [pattern0, pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params)
 
 
 def seqABC_seqACB(createTestFile=False):
