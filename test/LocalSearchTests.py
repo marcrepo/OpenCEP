@@ -36,7 +36,7 @@ sys.path.append(absolutePath)
 local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,
                                          tree_plan_params=
-                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.GREEDY_LEFT_DEEP_TREE,
+                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.DYNAMIC_PROGRAMMING_LEFT_DEEP_TREE,
                               cost_model_type=TreeCostModels.INTERMEDIATE_RESULTS_TREE_COST_MODEL,
                               tree_plan_merger_type=MultiPatternTreePlanMergeApproaches.TREE_PLAN_LOCAL_SEARCH,
                               tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
@@ -316,7 +316,7 @@ def nested_And_2(createTestFile=False):
     )
     selectivityMatrix = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0],
                          [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
-    arrivalRates = [0.2, 0.2, 0.2, 0.2]
+    arrivalRates = [0.1, 0.2, 0.3, 0.4]
     pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
                              StatisticsTypes.ARRIVAL_RATES: arrivalRates})
 

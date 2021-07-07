@@ -28,7 +28,6 @@ class TreePlanNode(ABC):
         self.condition = condition
         self.is_shared = False
         self.cost = None
-        self.pm = None
 
     def get_event_names(self):
         """
@@ -111,6 +110,7 @@ class TreePlanNestedNode(TreePlanNode):
         self.args = args
         self.cost = cost
         self.nested_event_index = event_index
+        self.is_cost_counted = False
 
     def get_leaves(self):
         return self.sub_tree_plan.get_leaves()
@@ -205,6 +205,7 @@ class TreePlanBinaryNode(TreePlanInternalNode):
         super().__init__(operator, condition)
         self.left_child = left_child
         self.right_child = right_child
+        self.pm = None
 
     def get_leaves(self):
         return self.left_child.get_leaves() + self.right_child.get_leaves()

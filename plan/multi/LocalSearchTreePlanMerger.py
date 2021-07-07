@@ -262,15 +262,20 @@ class LocalSearchTreePlanMerger:
         self.initial_statistics = initial_statistics
         self.__cost_model = TreeCostModelFactory.create_cost_model(cost_model_type)
         self.cost_model_type = cost_model_type
+        #here the different mcs actually calculated
         self.mpg = MPG(patterns)
         self.patterns = patterns
-        self.pattern_to_original_tree_plan_event_name_to_event_index_mapping = \
-            {
-                pattern: {leaf.event_name: leaf.event_index for leaf in
-                          tree_plan.root.get_leaves()}
+        self.original_tree_plan_event_name_to_event_index_mapping_list = [
+                                                        {leaf.event_name: leaf.event_index for leaf in
+                                                        tree_plan.root.get_leaves()}
+                                                        for pattern, tree_plan in pattern_to_tree_plan_map.items()
+                                                        ]
 
-                for pattern, tree_plan in pattern_to_tree_plan_map.items()
-            }
+
+        # todo comment: test
+        # todo: comment- end of test
+        # a list such that in place i there is a dictionary between pattern i nested args to its real nested indices in pattern
+        self.nested_args_to_real_nested_index_map_list = self.init_nested_indices_map(pattern_to_tree_plan_map)
         self.sub_tree_sharer = SubTreeSharingTreePlanMerger()
         #the initial pattern to tree plan map of local search is the one merged by subtree sharing
         self.pattern_to_tree_plan_map = self.sub_tree_sharer.merge_tree_plans(pattern_to_tree_plan_map)
@@ -279,14 +284,30 @@ class LocalSearchTreePlanMerger:
         #Because we always give maximal common subpattern to tree builder algorithems as nested subpattern and therefore
         #cahnging it original indices.
 
-        #todo comment: test
-        self.__cost_model.get_plan_cost(patterns[0], pattern_to_tree_plan_map[patterns[0]].root,patterns[0].statistics)
-
         self.pattern_to_tree_plan_cost_map = self.set_pattern_to_tree_plan_cost_map(pattern_to_tree_plan_map)
         self.heuristic = self.__set_heuristic(local_search_params[0])
         self.time_delta = self.__set_time_delta(local_search_params[1])
         #initialization of initial solution
         self.best_solution = solution(mcs_to_patterns_sharing={}, cost=sum(self.pattern_to_tree_plan_cost_map.values()))
+
+    def init_nested_indices_map(self, pattern_to_tree_plan_map):
+        return [self.init_nested_indices_map_helper(tree_plan.root) for pattern, tree_plan in pattern_to_tree_plan_map.items()]
+
+
+
+
+    def init_nested_indices_map_helper(self, node):
+        if isinstance(node, TreePlanLeafNode):
+            return {}
+        if isinstance(node, TreePlanNestedNode):
+            return {frozenset(node.args): node.nested_event_index}
+        if isinstance(node, TreePlanBinaryNode):
+            result0 = self.init_nested_indices_map_helper(node.left_child)
+            result1 = self.init_nested_indices_map_helper(node.right_child)
+            result0.update(result1)
+            return result0
+
+
 
     def set_pattern_to_tree_plan_cost_map(self, pattern_to_tree_plan_map):
         """
@@ -294,9 +315,15 @@ class LocalSearchTreePlanMerger:
         """
         #todo: implement the cost function in a way that if p0 and p1 sharing mcs a than the cost of the p0 will include
         #todo: the mcs and of p1 won't - to write a good decomentaion for that
-        return {pattern: self.__cost_model.get_plan_cost(pattern, tree_plan.root, pattern.statistics, is_local_search=True,
-                                                    event_fixing_mapping= self.pattern_to_original_tree_plan_event_name_to_event_index_mapping)
-                for pattern, tree_plan in pattern_to_tree_plan_map.items()}
+        dict = {}
+        for idx, pair in enumerate(pattern_to_tree_plan_map.items()):
+            pattern = pair[0]
+            tree_plan = pair[1]
+            dict[pattern]=self.__cost_model.get_plan_cost(pattern, tree_plan.root, pattern.statistics, is_local_search=True,
+                                                    event_fixing_mapping= self.original_tree_plan_event_name_to_event_index_mapping_list,
+                                                    nested_event_fixing_mapping=self.nested_args_to_real_nested_index_map_list,pattern_idx= idx)
+
+        return dict
 
     def __set_heuristic(self, heuristic):
         if heuristic == "TabuSearch":
