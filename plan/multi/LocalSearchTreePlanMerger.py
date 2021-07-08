@@ -271,10 +271,8 @@ class LocalSearchTreePlanMerger:
                                                         for pattern, tree_plan in pattern_to_tree_plan_map.items()
                                                         ]
 
-
-        # todo comment: test
-        # todo: comment- end of test
         # a list such that in place i there is a dictionary between pattern i nested args to its real nested indices in pattern
+        self.combined_args_to_real_index_map_list = self.init_combined_args_to_real_index_map_list()
         self.nested_args_to_real_nested_index_map_list = self.init_nested_indices_map(pattern_to_tree_plan_map)
         self.sub_tree_sharer = SubTreeSharingTreePlanMerger()
         #the initial pattern to tree plan map of local search is the one merged by subtree sharing
@@ -293,7 +291,18 @@ class LocalSearchTreePlanMerger:
     def init_nested_indices_map(self, pattern_to_tree_plan_map):
         return [self.init_nested_indices_map_helper(tree_plan.root) for pattern, tree_plan in pattern_to_tree_plan_map.items()]
 
-
+    def init_combined_args_to_real_index_map_list(self):
+        combined_list = []
+        for i in range(len(self.patterns)):
+            pattern = self.patterns[i]
+            pattern_dict = {}
+            for j, arg in enumerate(pattern.full_structure.args):
+                if isinstance(arg, PrimitiveEventStructure):
+                    pattern_dict[arg.name] = j
+                else:
+                    pattern_dict[frozenset(arg.args)] = j
+            combined_list.append(pattern_dict)
+        return combined_list
 
 
     def init_nested_indices_map_helper(self, node):
@@ -320,8 +329,8 @@ class LocalSearchTreePlanMerger:
             pattern = pair[0]
             tree_plan = pair[1]
             dict[pattern]=self.__cost_model.get_plan_cost(pattern, tree_plan.root, pattern.statistics, is_local_search=True,
-                                                    event_fixing_mapping= self.original_tree_plan_event_name_to_event_index_mapping_list,
-                                                    nested_event_fixing_mapping=self.nested_args_to_real_nested_index_map_list,pattern_idx= idx)
+                                                    event_fixing_mapping= self.combined_args_to_real_index_map_list,
+                                                    nested_event_fixing_mapping=self.combined_args_to_real_index_map_list, pattern_idx= idx)
 
         return dict
 

@@ -161,7 +161,8 @@ def get_real_pattern_indices_for_computing_cost_without_diving(node,pattern_idx,
     if isinstance(node, TreePlanNestedNode):
         return [nested_event_fixing_mapping[pattern_idx][frozenset(node.args)]]
     if isinstance(node, TreePlanBinaryNode):
-        return get_real_pattern_indices_for_computing_cost_without_diving(node.left_child)+get_real_pattern_indices_for_computing_cost_without_diving(node.right_child)
+        return get_real_pattern_indices_for_computing_cost_without_diving(node.left_child,pattern_idx, event_fixing_mapping, nested_event_fixing_mapping)\
+               +get_real_pattern_indices_for_computing_cost_without_diving(node.right_child,pattern_idx, event_fixing_mapping, nested_event_fixing_mapping)
 
 
 class TreeCostModelFactory:

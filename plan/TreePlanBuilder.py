@@ -44,7 +44,7 @@ class TreePlanBuilder(ABC):
         root = self.__negation_algorithm.handle_pattern_negation(pattern, statistics_copy, positive_root)
         pattern_condition = deepcopy(pattern.condition)  # copied since apply_condition modifies its input parameter
         root.apply_condition(pattern_condition)
-        pattern.statistics = modified_statistics
+        pattern.statistics=modified_statistics
         return TreePlan(root)
 
     @staticmethod

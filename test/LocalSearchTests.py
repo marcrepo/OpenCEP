@@ -36,7 +36,7 @@ sys.path.append(absolutePath)
 local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,
                                          tree_plan_params=
-                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.DYNAMIC_PROGRAMMING_LEFT_DEEP_TREE,
+                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.TRIVIAL_LEFT_DEEP_TREE,
                               cost_model_type=TreeCostModels.INTERMEDIATE_RESULTS_TREE_COST_MODEL,
                               tree_plan_merger_type=MultiPatternTreePlanMergeApproaches.TREE_PLAN_LOCAL_SEARCH,
                               tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
@@ -302,27 +302,33 @@ def nested_And(createTestFile=False):
 
 def nested_And_2(createTestFile=False):
     pattern0 = Pattern(
-        SeqOperator(PrimitiveEventStructure("CBRL", "z"),
-                    SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b")),
-                    PrimitiveEventStructure("CBRL", "c")),
+        SeqOperator(PrimitiveEventStructure("CBRL", "z"), PrimitiveEventStructure("CBRL", "c"),
+                    SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("CBRL", "g")),
+                   ),
         AndCondition(),
         timedelta(minutes=5)
     )
     pattern1 = Pattern(
-        SeqOperator(PrimitiveEventStructure("CBRL", "d"), SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b")),
-                    PrimitiveEventStructure("CBRL", "c")),
+        SeqOperator(PrimitiveEventStructure("CBRL", "z"), PrimitiveEventStructure("CBRL", "c"),SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("CBRL", "h")),
+                    ),
         AndCondition(),
         timedelta(minutes=5)
     )
-    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
-    arrivalRates = [0.1, 0.2, 0.3, 0.4]
+    selectivityMatrix = [[0.11, 0.12, 0.13, 0.14,0.15],
+                         [0.21,0.22, 0.23, 0.24,0.1],
+                         [0.31 , 0.32, 0.33, 0.34,0.1],
+                         [0.41, 0.42, 0.43, 0.44,0,1],
+                         [0.41, 0.42, 0.43, 0.44,0,1]]
+    arrivalRates = [0.1, 0.2, 0.3, 0.4, 0.1]
     pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
                              StatisticsTypes.ARRIVAL_RATES: arrivalRates})
 
-    selectivityMatrix = [[1.0, 1.0, 1.0,1.0],[1.0, 1.0, 1.0,1.0],
-                         [1.0, 1.0, 1.0,1.0],[1.0, 1.0, 1.0,1.0]]
-    arrivalRates = [0.2, 0.2, 0.2,0.2]
+    selectivityMatrix = [[0.11, 0.12, 0.13, 0.14,0.15],
+                         [0.21,0.22, 0.23, 0.24,0.1],
+                         [0.31 , 0.32, 0.33, 0.34,0.1],
+                         [0.41, 0.42, 0.43, 0.44,0,1],
+                         [0.41, 0.42, 0.43, 0.44,0,1]]
+    arrivalRates = [0.1, 0.2, 0.3, 0.4, 0.1]
     pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
                              StatisticsTypes.ARRIVAL_RATES: arrivalRates})
 
