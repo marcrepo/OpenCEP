@@ -64,6 +64,8 @@ from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanM
 from test.testUtils import *
 from tree.nodes.SeqNode import *
 from plan.TreeCostModel import *
+import random
+
 
 
 class MPG:
@@ -117,12 +119,6 @@ class MPG:
         return self.__find_maximal_common_subpatterns_helper(p1, p2)
 
 
-    def remove_mcs_from_pattern(self, pattern, mcs):
-        new_positive_structure = set(pattern.positive_structure)
-        new_positive_structure.difference(mcs)
-        pattern.positive_structure = list(new_positive_structure)
-
-
     def find_one_mcs_per_intersection(self, events_intersection, p1, p2):
         events_intersection_names_set = set()
         for event in events_intersection:
@@ -148,33 +144,23 @@ class MPG:
         for condition in p2_filtered_only_conditions:
             p2_filtered_only_conditions_names = p2_filtered_only_conditions_names.union(condition.get_event_names())
 
-        """
-        conditions_union = p1_event_conditions_filtered_by_intersection_set.union(p1_event_conditions_filtered_by_intersection_set)
-        conditions_intersection = p1_event_conditions_filtered_by_intersection_set.intersection(p1_event_conditions_filtered_by_intersection_set) 
-        unmutal_conditions = conditions_union.difference(conditions_intersection)
-        unmutal_conditions_names = [condition.get_event_names() for condition in unmutal_conditions]
-
-        """
         events_intersection_after_condition_filtering = copy.deepcopy(events_intersection)
         for event in events_intersection:
             for name in event.get_all_event_names():
                 if name in p1_filtered_only_conditions_names or name in p2_filtered_only_conditions_names:
                     events_intersection_after_condition_filtering.remove(event)
                     break
-        """ 
-                pattern_to_return = copy.deepcopy(p1)
-                pattern_to_return.full_structure.args = list(events_intersection_after_condition_filtering)
-                pattern_to_return.positive_structure.args = list(events_intersection_after_condition_filtering)
-                return pattern_to_return
-        """
+
         return frozenset(events_intersection_after_condition_filtering)
 
     def __find_maximal_common_subpatterns_helper(self, p1: Pattern, p2: Pattern):
         """
         :return: maximal common subpattern for 2 equal operators
         """
-        events_intersections = p1.full_structure.calc_structure_intersections(p2.full_structure)
         result = []
+        events_intersections = p1.full_structure.calc_structure_intersections(p2.full_structure)
+        if events_intersections is None:
+            return result
         for events_intersection in events_intersections:
             if events_intersection is not None:
                 mcs = self.find_one_mcs_per_intersection(events_intersection,p1,p2)
@@ -183,64 +169,12 @@ class MPG:
         return result
 
 
-    def __filter_arg_conditions_pattern_condtions(self, arg, pattern_conditions):
-        arg_names = set(arg.get_all_event_names())
-        return [condition for condition in pattern_conditions if set(condition.get_event_names()).issubset(arg_names)]
-
-    def __build_tree_that_starts_with_mcs(self, pattern: Pattern, statistics: Dict, mcs):
-        p = copy.deepcopy(pattern)
-        mcs = copy.deepcopy(mcs)
-        statistics = copy.deepcopy(statistics)
 
 
 
 
-class SearchHeuristic(ABC):
-    def __init__(self, neighborhood_func):
-        self.neighborhood_func = neighborhood_func
-        self.stop_local_search = False
 
-    def get_best_neighbor(self, cur_state):
-        raise NotImplementedError
-
-
-class TabuSearch(SearchHeuristic):
-    # Tabu search stop if all neighbors are more expensive than current state
-    def __init__(self, tabu_list_capacity=1000, neighbors_num_per_iteration=100):
-        super().__init__(None)
-        self.tabu_list_capacity = tabu_list_capacity
-        self.neighbors_num_per_iteration = neighbors_num_per_iteration
-        self.tabu_list = []
-
-    def get_best_neighbor(self, cur_state):
-        # tabu doesnt create a new state if  it is in his tabu_list
-        # state is identical if for each mcs use in state it is combined for exactly same pattern trees
-        best_neighboor = None
-        if best_neighboor.cost > cur_state.cost:
-            self.stop_local_search = True
-
-
-class SimulatedAnnealing(SearchHeuristic):
-    def __init__(self):
-        super().__init__(None)
-
-
-def get_neighbor():
-    """
-    An implementation to n-vertex neighborhood fucntion presented in article.
-    returns a new pattern to tree plan map which created in that way:...............
-
-    Important notes:
-            Our goal is to find an as efficient as possible pattern to tree plan map.
-            Single primitive event structures, and nested equivalent sub patterns are automatically shared via subtree merger
-            Thus we will not include those in our mcs's
-    """
-
-class solution:
-    def __init__(self, mcs_to_patterns_sharing, cost=None):
-        # a hash between each mcs that is shared inside the solution to the patterns that are sharing it in the solution
-        self.mcs_to_patterns_sharing = mcs_to_patterns_sharing
-        self.cost = cost
+MAX_NEIGHBOURS_TO_DEVELOP = 1
 
 
 class LocalSearchTreePlanMerger:
@@ -270,10 +204,8 @@ class LocalSearchTreePlanMerger:
                                                         tree_plan.root.get_leaves()}
                                                         for pattern, tree_plan in pattern_to_tree_plan_map.items()
                                                         ]
-
         # a list such that in place i there is a dictionary between pattern i nested args to its real nested indices in pattern
         self.combined_args_to_real_index_map_list = self.init_combined_args_to_real_index_map_list()
-        self.nested_args_to_real_nested_index_map_list = self.init_nested_indices_map(pattern_to_tree_plan_map)
         self.sub_tree_sharer = SubTreeSharingTreePlanMerger()
         #the initial pattern to tree plan map of local search is the one merged by subtree sharing
         self.pattern_to_tree_plan_map = self.sub_tree_sharer.merge_tree_plans(pattern_to_tree_plan_map)
@@ -282,14 +214,12 @@ class LocalSearchTreePlanMerger:
         #Because we always give maximal common subpattern to tree builder algorithems as nested subpattern and therefore
         #cahnging it original indices.
 
-        self.pattern_to_tree_plan_cost_map = self.set_pattern_to_tree_plan_cost_map(pattern_to_tree_plan_map)
-        self.heuristic = self.__set_heuristic(local_search_params[0])
-        self.time_delta = self.__set_time_delta(local_search_params[1])
+        #self.pattern_to_tree_plan_cost_map = self.set_pattern_to_tree_plan_cost_map(pattern_to_tree_plan_map)
         #initialization of initial solution
-        self.best_solution = solution(mcs_to_patterns_sharing={}, cost=sum(self.pattern_to_tree_plan_cost_map.values()))
+        self.initial_solution = self.Solution({}, self.pattern_to_tree_plan_map)
+        self.__set_and_init_heuristic(local_search_params[0])
+        self.time_limit = self.__set_time_limit(local_search_params[1])
 
-    def init_nested_indices_map(self, pattern_to_tree_plan_map):
-        return [self.init_nested_indices_map_helper(tree_plan.root) for pattern, tree_plan in pattern_to_tree_plan_map.items()]
 
     def init_combined_args_to_real_index_map_list(self):
         combined_list = []
@@ -304,20 +234,6 @@ class LocalSearchTreePlanMerger:
             combined_list.append(pattern_dict)
         return combined_list
 
-
-    def init_nested_indices_map_helper(self, node):
-        if isinstance(node, TreePlanLeafNode):
-            return {}
-        if isinstance(node, TreePlanNestedNode):
-            return {frozenset(node.args): node.nested_event_index}
-        if isinstance(node, TreePlanBinaryNode):
-            result0 = self.init_nested_indices_map_helper(node.left_child)
-            result1 = self.init_nested_indices_map_helper(node.right_child)
-            result0.update(result1)
-            return result0
-
-
-
     def set_pattern_to_tree_plan_cost_map(self, pattern_to_tree_plan_map):
         """
         Returns a dictionary between pattern to its initial cost before local search starts to run.
@@ -329,61 +245,81 @@ class LocalSearchTreePlanMerger:
             pattern = pair[0]
             tree_plan = pair[1]
             dict[pattern]=self.__cost_model.get_plan_cost(pattern, tree_plan.root, pattern.statistics, is_local_search=True,
-                                                    event_fixing_mapping= self.combined_args_to_real_index_map_list,
-                                                    nested_event_fixing_mapping=self.combined_args_to_real_index_map_list, pattern_idx= idx)
+                                                    event_fixing_mapping= self.combined_args_to_real_index_map_list, pattern_idx= idx)
 
         return dict
 
-    def __set_heuristic(self, heuristic):
+    def __set_and_init_heuristic(self, heuristic):
         if heuristic == "TabuSearch":
-            return TabuSearch()
+            self.merge_tree_plans = self.tabu_search_merge_tree_plans
+            return
 
         if heuristic == "SimulatedAnnealing":
-            return SimulatedAnnealing()
+            self.merge_tree_plans = self.simulated_annealing_merge_tree_plans()
+            return
 
         raise Exception("local search: Unknown Heuristic")
 
-    def __set_time_delta(self, time_delta):
-        if not isinstance(time_delta, timedelta):
+    def __set_time_limit(self, time_limit):
+        if not isinstance(time_limit, timedelta):
             raise Exception("local search: time_delta is not instance of timeDelta class")
-        return time_delta
+        return time_limit
 
-    def find_mcs_to_patterns_that_dont_share_it_in_solution_mapping(self, cur_solution_dict):
+    """------------Functions for user defined local search heuristics------------------------------------------------"""
+
+    class Solution:
+        def __init__(self, mcs_to_patterns_sharing, pattern_to_tree_plan_map):
+            # a hash between each mcs that is shared inside the solution to the patterns that are sharing it in the solution
+            self.mcs_to_patterns_sharing = mcs_to_patterns_sharing
+            self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
+
+    def score(self, sol: Solution):
+        cost = 0
+        for idx, pair in enumerate(sol.pattern_to_tree_plan_map.items()):
+            pattern = pair[0]
+            tree_plan = pair[1]
+            cost += self.__cost_model.get_plan_cost(pattern, tree_plan.root, pattern.statistics,
+                                                    is_local_search=True,
+                                                    event_fixing_mapping=self.combined_args_to_real_index_map_list,
+                                                    pattern_idx=idx)
+        return cost
+
+
+    def find_mcs_to_patterns_that_dont_share_it_in_solution_mapping(self, mcs_to_pattern_dict):
         """
         Returns a dictionary of mcs to patterns that contains them, a key,value of mcs:list[p1,p2,p3....]
         iff for each pattern in the list its tree plan in the current solution does not share mcs
         (we do not share the mcs in this pattern).
         """
         difference_dict = {}
-        for mcs, patterns_mcs in self.mpg.mcs_to_patterns:
-            if mcs not in cur_solution_dict.keys():
-                difference_dict[mcs]= self.mpg.mcs_to_patterns[mcs]
+        for mcs, patterns_mcs in self.mpg.mcs_to_patterns.items():
+            if mcs not in mcs_to_pattern_dict.keys():
+                difference_dict[mcs] = self.mpg.mcs_to_patterns[mcs]
             else:
-                patterns_difference = self.mpg.mcs_to_patterns[mcs] - cur_solution_dict[mcs]
+                patterns_difference = self.mpg.mcs_to_patterns[mcs] - mcs_to_pattern_dict[mcs]
                 if len(patterns_difference) > 0:
                     difference_dict[mcs] = patterns_difference
         return difference_dict
 
-    def build_solution_tree_plan_map(self):
-        pass
-
-    def calc_solution_cost(self):
-        pass
-
-    def get_neighbor(self):
+    def neighbourhood(self, cur_sol:Solution):
         """
         An implementation to n-vertex neighborhood fucntion presented in article.
         returns a new pattern to tree plan map which created in that way:...............
-
-        Important notes:
-                Our goal is to find an as efficient as possible pattern to tree plan map.
-                Single primitive event structures, and nested equivalent sub patterns are automatically shared via subtree merger
-                Thus we will not include those in our mcs's
         """
+        num_of_developed_neighbours = 0
+        neighbours = []
+        #a dictionary that keeps all left possible sharing options that all the neighbors in the neighbourhood do not use
+        #see function documentation for better understanding
+        left_possible_shares_dict = self.find_mcs_to_patterns_that_dont_share_it_in_solution_mapping (cur_sol.mcs_to_patterns_sharing)
+        while left_possible_shares_dict and num_of_developed_neighbours < MAX_NEIGHBOURS_TO_DEVELOP:
+            mcs, patterns = random.choice(list(left_possible_shares_dict.items()))
+            check = 5
 
 
+    def stopping_criterion(self):
+        return (datetime.now() - self.start_date) >= (self.time_limit - timedelta(seconds=0.1))
 
-    def merge_tree_plans(self):
+    def tabu_search_merge_tree_plans(self):
         """
             Merges the given patterns tree by sharing equivalent subtrees found via local search.
             We do a local search for lowest cost pattern to tree plan map
@@ -391,46 +327,26 @@ class LocalSearchTreePlanMerger:
             Documentation for how we developing a new neighbour(other pattern to tree plan map) is presented under n-vertex function.
             You can use between two local search heuristics: Tabu-L and Simulated Annealing by give the correct parameters
             to runTest function (see Examples in test).
-
-
         """
+        initial_solution = self.initial_solution
+        neighbours = self.neighbourhood(initial_solution)
+        check=5
 
 
 
 
+    def simulated_annealing_merge_tree_plans(self):
+        pass
 
-
-
-
-        mcs_es = self.mpg.pattern_to_various_mcs[self.patterns[0]]
-        mcs = [i for i in mcs_es]
-        real_mcs = [mcs[0],self.patterns[0]]
-        self.pattern_to_tree_plan_map[self.patterns[0]] = self.optimizer.build_initial_plan(self.initial_statistics, self.cost_model_type, pattern=self.patterns[0],
-                                          mcs=real_mcs)
-        for pattern in self.patterns:
-            print(self.cost_model_type.get_plan_cost(pattern, self.pattern_to_tree_plan_map[pattern], self.initial_statistics))
-        self.sub_tree_sharer.merge_tree_plans(self.pattern_to_tree_plan_map)
-        check = 4
-
-        """
-        #creating initial state: initial state is the state where no mcs is shared
-        cur_state = state()
-        cur_state.calc_state_cost()
-        best_state = copy.deepcopy(cur_state)
-
-        while((datetime.now - self.start_date) <= (self.time_delta - timedelta(seconds=0.1)) and not self.heuristic.stop_local_search):
+        while (datetime.now() - self.start_date) < (self.time_limit - timedelta(seconds=0.1)):
             cur_state = self.heuristic.get_best_neighboor()
             if cur_state.cost < best_state.cost:
                 best_state = cur_state
         return SubTreeSharingTreePlanMerger().merge_tree_plans(self.__create_pattern_to_tree_plan_map(best_state))
 
-
         """
+        Code for fixing leaves indices seq operator:
         leaves = pattern_to_tree_plan_map[patterns[1]].root.get_leaves()
         for leaf in leaves:
             leaf.event_index = event_name_to_event_index[leaf.event_name]
-
-
-
-
-
+        """

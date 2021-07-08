@@ -302,37 +302,55 @@ def nested_And(createTestFile=False):
 
 def nested_And_2(createTestFile=False):
     pattern0 = Pattern(
-        SeqOperator(PrimitiveEventStructure("CBRL", "z"), PrimitiveEventStructure("CBRL", "c"),
-                    SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("CBRL", "g")),
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("CBRL", "c#0"),PrimitiveEventStructure("amzn", "am#0")
                    ),
         AndCondition(),
         timedelta(minutes=5)
     )
     pattern1 = Pattern(
-        SeqOperator(PrimitiveEventStructure("CBRL", "z"), PrimitiveEventStructure("CBRL", "c"),SeqOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("CBRL", "h")),
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("CBRL", "c1"), PrimitiveEventStructure("CBRL", "c2"),
                     ),
         AndCondition(),
         timedelta(minutes=5)
     )
-    selectivityMatrix = [[0.11, 0.12, 0.13, 0.14,0.15],
-                         [0.21,0.22, 0.23, 0.24,0.1],
-                         [0.31 , 0.32, 0.33, 0.34,0.1],
-                         [0.41, 0.42, 0.43, 0.44,0,1],
-                         [0.41, 0.42, 0.43, 0.44,0,1]]
-    arrivalRates = [0.1, 0.2, 0.3, 0.4, 0.1]
+    pattern2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("CBRL", "c#2"),PrimitiveEventStructure("amzn", "am#2")
+                    ),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern3 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a#3"),
+                    PrimitiveEventStructure("CBRL", "c1"), PrimitiveEventStructure("CBRL", "c2"),
+                    PrimitiveEventStructure("amzn", "am#3")
+                    ),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+
+    selectivityMatrix = [[0.11, 0.12, 0.13, 0.14],
+                         [0.21,0.22, 0.23, 0.24],
+                         [0.31 , 0.32, 0.33, 0.34],
+                         [0.41, 0.42, 0.43, 0.44],
+                         ]
+    arrivalRates = [0.1, 0.2, 0.3, 0.4]
+
     pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
                              StatisticsTypes.ARRIVAL_RATES: arrivalRates})
 
-    selectivityMatrix = [[0.11, 0.12, 0.13, 0.14,0.15],
-                         [0.21,0.22, 0.23, 0.24,0.1],
-                         [0.31 , 0.32, 0.33, 0.34,0.1],
-                         [0.41, 0.42, 0.43, 0.44,0,1],
-                         [0.41, 0.42, 0.43, 0.44,0,1]]
-    arrivalRates = [0.1, 0.2, 0.3, 0.4, 0.1]
     pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
                              StatisticsTypes.ARRIVAL_RATES: arrivalRates})
 
-    runMultiTest("other", [pattern0, pattern1], createTestFile, local_search_eval_mechanism_params,
+    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("other", [pattern0, pattern1, pattern2, pattern3], createTestFile, local_search_eval_mechanism_params,
                  eventStream=nasdaqEventStreamTiny)
 
 def seq_resarch_nested(createTestFile=False):
