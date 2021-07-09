@@ -308,12 +308,82 @@ class LocalSearchTreePlanMerger:
         """
         num_of_developed_neighbours = 0
         neighbours = []
+        cur_sol_mcs = cur_sol.mcs_to_patterns_sharing.keys()
         #a dictionary that keeps all left possible sharing options that all the neighbors in the neighbourhood do not use
         #see function documentation for better understanding
         left_possible_shares_dict = self.find_mcs_to_patterns_that_dont_share_it_in_solution_mapping (cur_sol.mcs_to_patterns_sharing)
         while left_possible_shares_dict and num_of_developed_neighbours < MAX_NEIGHBOURS_TO_DEVELOP:
-            mcs, patterns = random.choice(list(left_possible_shares_dict.items()))
-            check = 5
+            mcs, patterns_indices = random.choice(list(left_possible_shares_dict.items()))
+            cur_neighbor_pattern_to_tree_plan_map = copy.deepcopy(cur_sol.pattern_to_tree_plan_map)
+            for pattern_idx in patterns_indices:
+                pattern_mcs_list = [mcs for mcs in cur_sol_mcs if pattern_idx in cur_sol_mcs[mcs]]+[mcs]
+                cur_neighbor_pattern_to_tree_plan_map[self.patterns[pattern_idx]]= self.build_tree_plan_with_mcses(pattern_mcs_list, pattern_idx)
+            cur_neighbor_mcs_to_pattern_sharing = (copy.deepcopy(cur_sol.mcs_to_patterns_sharing)).update({mcs:patterns_indices})
+            neighbor = self.Solution(cur_neighbor_mcs_to_pattern_sharing,cur_neighbor_pattern_to_tree_plan_map)
+            neighbours.append(neighbor)
+        return neighbours
+
+    def build_tree_plan_with_mcses(self, mcses, pattern_idx):
+        pattern = copy.deepcopy(self.patterns[pattern_idx])
+        #dictionary between old event index to new event index- we use it later to update the modfied pattern statistics
+        old_to_new_indices_dict = {}
+        args_to_remove = set()
+        for mcs in mcses:
+            args_to_remove = args_to_remove.union(mcs)
+        #removing mces args from pattern
+        for arg in args_to_remove:
+            pattern.full_structure.remove(arg)
+            pattern.positive_structure.remove(arg)
+
+        operator = None
+        if isinstance(pattern.full_structure, AndOperator):
+            operator = AndOperator
+        if isinstance(pattern.full_structure, SeqOperator):
+            operator = SeqOperator
+        if operator is None:
+            raise ValueError("unknown operator type")
+
+        #adding mcs as nested args in the end
+        addition = len(pattern.full_structure.get_all_event_names())
+        for mcs in mcses:
+            for event in mcs:
+                old_to_new_indices_dict[
+                    self.original_tree_plan_event_name_to_event_index_mapping_list[pattern_idx][event.name]
+                ] = addition
+                addition += 1
+            subpattern_to_add = operator.__init__(*list(mcs))
+            pattern.full_structure.args.append(subpattern_to_add)
+            pattern.positive_structure.append(subpattern_to_add)
+
+        self.adjust_pattern_statistics(pattern, old_to_new_indices_dict, pattern_idx)
+        tree_plan = self.optimizer.build_initial_plan(self.initial_statistics,self.cost_model_type,pattern)
+
+        if isinstance(operator, SeqOperator):
+            leaves = tree_plan.root.get_leaves()
+            for leaf in leaves:
+                leaf.event_index = self.original_tree_plan_event_name_to_event_index_mapping_list[pattern_idx][leaf.event_name]
+
+
+    def adjust_pattern_statistics(self, pattern, old_to_new_indices_dict,pattern_idx):
+        #the pattern here is a deep copy of the original pattern the user gave
+        #before change its statistics are equivalent to the statistics the user gave
+        original_arrival_rates = self.patterns[pattern_idx].statistics[StatisticsTypes.ARRIVAL_RATES]
+        original_selectivity_matrix = self.patterns[pattern_idx].statistics[StatisticsTypes.SELECTIVITY_MATRIX]
+        pattern_arrival_rates = pattern.statistics[StatisticsTypes.ARRIVAL_RATES]
+        pattern_selectivity_matrix = pattern.statistics[StatisticsTypes.SELECTIVITY_MATRIX]
+        #fixing arrival rates
+        for i in range(len(original_arrival_rates)):
+            if old_to_new_indices_dict[i] != i:
+                pattern_arrival_rates[old_to_new_indices_dict[i]] = original_arrival_rates[i]
+        #fixing selectivity_matrix
+        mat_indices = range(len(original_selectivity_matrix))
+        for i in mat_indices:
+            for j in mat_indices:
+                if old_to_new_indices_dict[i] != i or old_to_new_indices_dict[j] != j:
+                    pattern_selectivity_matrix[i][j]=original_selectivity_matrix[i][j]
+
+
+
 
 
     def stopping_criterion(self):
@@ -344,9 +414,5 @@ class LocalSearchTreePlanMerger:
                 best_state = cur_state
         return SubTreeSharingTreePlanMerger().merge_tree_plans(self.__create_pattern_to_tree_plan_map(best_state))
 
-        """
-        Code for fixing leaves indices seq operator:
-        leaves = pattern_to_tree_plan_map[patterns[1]].root.get_leaves()
-        for leaf in leaves:
-            leaf.event_index = event_name_to_event_index[leaf.event_name]
-        """
+
+        nt_name]
