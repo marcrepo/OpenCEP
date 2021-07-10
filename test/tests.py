@@ -10,12 +10,11 @@ import test.EventProbabilityTests
 from test.NestedTests import *
 from test.UnitTests.test_storage import run_storage_tests
 from test.UnitTests.RuleTransformationTests import ruleTransformationTests
-from test.LocalSearchTests import*
+
 
 runTest.over_all_time = 0
 
 # basic functionality tests
-"""
 oneArgumentsearchTest()
 simplePatternSearchTest()
 googleAscendPatternSearchTest()
@@ -29,9 +28,7 @@ hierarchyPatternSearchTest()
 duplicateEventTypeTest()
 
 # tree plan generation algorithms
-"""
-#arrivalRatesPatternSearchTest()
-"""
+arrivalRatesPatternSearchTest()
 nonFrequencyPatternSearchTest()
 frequencyPatternSearchTest()
 nonFrequencyPatternSearch2Test()
@@ -47,13 +44,11 @@ greedyPatternSearchTest()
 iiRandomPatternSearchTest()
 iiRandom2PatternSearchTest()
 iiGreedyPatternSearchTest()
-"""
-#iiGreedy2PatternSearchTest()
-"""
+iiGreedy2PatternSearchTest()
+
 zStreamOrdPatternSearchTest()
-zStreamPatternSearchTest()"""
-#dpBPatternSearchTest()
-"""
+zStreamPatternSearchTest()
+dpBPatternSearchTest()
 dpLdPatternSearchTest()
 
 nonFrequencyTailoredPatternSearchTest()
@@ -68,9 +63,7 @@ structuralTest5()
 structuralTest6()
 
 # Kleene closure tests
-"""
-#oneArgumentsearchTestKleeneClosure()
-"""
+oneArgumentsearchTestKleeneClosure()
 MinMax_0_TestKleeneClosure()
 MinMax_1_TestKleeneClosure()
 MinMax_2_TestKleeneClosure()
@@ -89,9 +82,7 @@ KC_Condition_Failure_03()
 
 # negation tests
 simpleNotTest()
-"""
-#multipleNotInTheMiddleTest()
-"""
+multipleNotInTheMiddleTest()
 oneNotAtTheBeginningTest()
 multipleNotAtTheBeginningTest()
 oneNotAtTheEndTest()
@@ -178,17 +169,13 @@ greedyNestedTest()
 greedyNestedStructuralTest()
 iiGreedyNestedPatternSearchTest()
 iiGreedyNestedStructuralTest()
-"""
-#greedyNestedComplexStructuralTest()
-"""
+greedyNestedComplexStructuralTest()
 dpLdNestedPatternSearchTest()
 dpLdNestedStructuralTest()
 dpBNestedPatternSearchTest()
 dpBNestedStructuralTest()
 dpLdNestedComplexStructuralTest()
-"""
-#zstreamOrdNestedComplexStructuralTest()
-"""
+zstreamOrdNestedComplexStructuralTest()
 KCNestedStructuralTest()
 
 
@@ -272,18 +259,8 @@ msftDrivRacePatternSearchTest_8()
 googleIncreasePatternSearchTest_8()
 amazonSpecificPatternSearchTest_8()
 googleAmazonLowPatternSearchTest_8()
-"""
-#two_and_operator()
-#seqABC_seqACB_MPG()
-nested_And_2()
-#seq_resarch()
-#one_pattern_inside_other()
-#seqABC_seqACB()
-#andABC_seqACB()
-#dpBPatternSearchTestTomCheck()
-#local_search_test()
-#new_cost_machnizem()
-#seq_resarch_nested()
+
+
 # benchmarks
 if INCLUDE_BENCHMARKS:
     sortedStorageBenchMarkTest()
