@@ -272,6 +272,10 @@ class LocalSearchTreePlanMerger:
             # a hash between each mcs that is shared inside the solution to the patterns that are sharing it in the solution
             self.mcs_to_patterns_sharing = mcs_to_patterns_sharing
             self.pattern_to_tree_plan_map = pattern_to_tree_plan_map
+            self.cost = None
+
+        def get_tabu_list_store_info(self):
+            return self.mcs_to_patterns_sharing
 
     def score(self, sol: Solution):
         cost = 0
@@ -282,6 +286,7 @@ class LocalSearchTreePlanMerger:
                                                     is_local_search=True,
                                                     event_fixing_mapping=self.combined_args_to_real_index_map_list,
                                                     pattern_idx=idx)
+        sol.cost = cost
         return cost
 
 
