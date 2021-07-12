@@ -1,71 +1,13 @@
 import copy
-
-from plan.TreePlan import TreePlanNode
-from plan.multi.SubTreeSharingTreePlanMerger import SubTreeSharingTreePlanMerger
-from plan.multi.RecursiveTraversalTreePlanMerger import RecursiveTraversalTreePlanMerger
-from datetime import timedelta, datetime
-from typing import List, Dict
-from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
-from adaptive.optimizer.Optimizer import Optimizer
-from adaptive.statistics.StatisticsCollector import StatisticsCollector
-from base.Pattern import Pattern
-from evaluation.EvaluationMechanismTypes import EvaluationMechanismTypes
-from misc import DefaultConfig
-from tree.evaluation.TreeEvaluationMechanismUpdateTypes import TreeEvaluationMechanismUpdateTypes
-from adaptive.optimizer.OptimizerFactory import OptimizerParameters, OptimizerFactory, \
-    StatisticsDeviationAwareOptimizerParameters
-from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorFactory
-from plan.multi.ShareLeavesTreePlanMerger import ShareLeavesTreePlanMerger
+from datetime import datetime
+from typing import Dict
 from plan.multi.SubTreeSharingTreePlanMerger import SubTreeSharingTreePlanMerger
 from plan.TreePlan import TreePlan
-from plan.TreePlanBuilderFactory import TreePlanBuilderFactory
-from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
-from tree.PatternMatchStorage import TreeStorageParameters
-from tree.evaluation.SimultaneousTreeBasedEvaluationMechanism import SimultaneousTreeBasedEvaluationMechanism
-from tree.evaluation.TrivialTreeBasedEvaluationMechnism import TrivialTreeBasedEvaluationMechanism
-from condition.CompositeCondition import *
-from base.PatternStructure import *
-from condition.BaseRelationCondition import GreaterThanCondition, SmallerThanCondition, GreaterThanEqCondition, \
-    SmallerThanEqCondition
-from condition.CompositeCondition import AndCondition
-from condition.Condition import Variable
 from datetime import timedelta
-from typing import List, Dict
-
-from adaptive.optimizer.Optimizer import Optimizer
-from adaptive.statistics.StatisticsCollector import StatisticsCollector
-from base.Pattern import Pattern
-from evaluation.EvaluationMechanismTypes import EvaluationMechanismTypes
-from misc import DefaultConfig
-from tree.evaluation.TreeEvaluationMechanismUpdateTypes import TreeEvaluationMechanismUpdateTypes
-from adaptive.optimizer.OptimizerFactory import OptimizerParameters, OptimizerFactory, \
-    StatisticsDeviationAwareOptimizerParameters
-from adaptive.statistics.StatisticsCollectorFactory import StatisticsCollectorFactory
-from plan.multi.ShareLeavesTreePlanMerger import ShareLeavesTreePlanMerger
-from plan.multi.SubTreeSharingTreePlanMerger import SubTreeSharingTreePlanMerger
-from plan.TreePlan import TreePlan
-from plan.TreePlanBuilderFactory import TreePlanBuilderFactory
-from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
-from tree.PatternMatchStorage import TreeStorageParameters
-from tree.evaluation.SimultaneousTreeBasedEvaluationMechanism import SimultaneousTreeBasedEvaluationMechanism
-from tree.evaluation.TrivialTreeBasedEvaluationMechnism import TrivialTreeBasedEvaluationMechanism
-
-from datetime import timedelta
-
-from adaptive.optimizer.OptimizerFactory import OptimizerParameters
-from adaptive.optimizer.OptimizerTypes import OptimizerTypes
-from base.Pattern import Pattern
-from base.PatternStructure import AndOperator, SeqOperator, PrimitiveEventStructure, NegationOperator
-from condition.BaseRelationCondition import GreaterThanCondition, SmallerThanCondition, GreaterThanEqCondition, \
-    SmallerThanEqCondition
-from condition.CompositeCondition import AndCondition
-from condition.Condition import Variable
-from plan.multi.MultiPatternTreePlanMergeApproaches import MultiPatternTreePlanMergeApproaches
-from test.testUtils import *
-from tree.nodes.SeqNode import *
+from base.PatternStructure import AndOperator, SeqOperator, PrimitiveEventStructure
 from plan.TreeCostModel import *
 import random
-
+from plan.multi.LocalSearchMetaHeuristics.Tabu_search import *
 
 
 class MPG:
@@ -78,6 +20,8 @@ class MPG:
         self.mcs_to_patterns = {}
         self.pattern_to_various_mcs = {p: set() for p in patterns}
         self.__create_mpg(patterns if isinstance(patterns, List) else list(patterns))
+
+
 
     def __create_mpg(self, patterns):
         """i"""
@@ -108,15 +52,20 @@ class MPG:
         1) Different operators: Seq(a,b) , And(a,b)
         2) Same operator with one argument: Seq(a,....), seq(a.....) => mcs= seq(a)
         3) One pattern is a nested argument of the other.
+        4) Two identical patterns will have no mcs in the mpg
         In addition we won't include nested subpattern in our mcs for the same reason above.
         """
         p1 = self.patterns[p1_idx]
         p2 = self.patterns[p2_idx]
 
         if type(p1.full_structure) is not type(p2.full_structure):
-            return None
+            return []
+
+        if p1.are_patterns_identical_for_local_search(p2):
+            return []
 
         return self.__find_maximal_common_subpatterns_helper(p1, p2)
+
 
 
     def find_one_mcs_per_intersection(self, events_intersection, p1, p2):
@@ -217,6 +166,7 @@ class LocalSearchTreePlanMerger:
         #self.pattern_to_tree_plan_cost_map = self.set_pattern_to_tree_plan_cost_map(pattern_to_tree_plan_map)
         #initialization of initial solution
         self.initial_solution = self.Solution({}, self.pattern_to_tree_plan_map)
+        self.heuristic = None
         self.__set_and_init_heuristic(local_search_params[0])
         self.time_limit = self.__set_time_limit(local_search_params[1])
 
@@ -251,7 +201,10 @@ class LocalSearchTreePlanMerger:
 
     def __set_and_init_heuristic(self, heuristic):
         if heuristic == "TabuSearch":
-            self.merge_tree_plans = self.tabu_search_merge_tree_plans
+            self.heuristic = TabuSearch(initial_solution=self.initial_solution, max_tabu_list_len=10,
+                                                 stopping_criterion=self.stopping_criterion, neighborhood=self.neighbourhood,
+                                                 score=self.score)
+            self.merge_tree_plans = self.heuristic.run
             return
 
         if heuristic == "SimulatedAnnealing":
@@ -276,6 +229,9 @@ class LocalSearchTreePlanMerger:
 
         def get_tabu_list_store_info(self):
             return self.mcs_to_patterns_sharing
+
+        def relevant_part_to_return(self):
+            return self.pattern_to_tree_plan_map
 
     def score(self, sol: Solution):
         cost = 0
@@ -313,60 +269,66 @@ class LocalSearchTreePlanMerger:
         """
         num_of_developed_neighbours = 0
         neighbours = []
-        cur_sol_mcs = cur_sol.mcs_to_patterns_sharing.keys()
+        cur_sol_mcs = list(cur_sol.mcs_to_patterns_sharing.keys())
         #a dictionary that keeps all left possible sharing options that all the neighbors in the neighbourhood do not use
         #see function documentation for better understanding
-        left_possible_shares_dict = self.find_mcs_to_patterns_that_dont_share_it_in_solution_mapping (cur_sol.mcs_to_patterns_sharing)
+        left_possible_shares_dict = self.find_mcs_to_patterns_that_dont_share_it_in_solution_mapping(cur_sol.mcs_to_patterns_sharing)
         while left_possible_shares_dict and num_of_developed_neighbours < MAX_NEIGHBOURS_TO_DEVELOP:
             mcs, patterns_indices = random.choice(list(left_possible_shares_dict.items()))
             cur_neighbor_pattern_to_tree_plan_map = copy.deepcopy(cur_sol.pattern_to_tree_plan_map)
             for pattern_idx in patterns_indices:
-                pattern_mcs_list = [mcs for mcs in cur_sol_mcs if pattern_idx in cur_sol_mcs[mcs]]+[mcs]
-                cur_neighbor_pattern_to_tree_plan_map[self.patterns[pattern_idx]]= self.build_tree_plan_with_mcses(pattern_mcs_list, pattern_idx)
-            cur_neighbor_mcs_to_pattern_sharing = (copy.deepcopy(cur_sol.mcs_to_patterns_sharing)).update({mcs:patterns_indices})
+                pattern_mcs_list = [mcs for mcs in cur_sol_mcs if pattern_idx in cur_sol.mcs_to_patterns_sharing[mcs]]+[mcs]
+                cur_neighbor_pattern_to_tree_plan_map[self.patterns[pattern_idx]] = self.build_tree_plan_with_mcses(pattern_mcs_list, pattern_idx)
+            cur_neighbor_mcs_to_pattern_sharing = (copy.deepcopy(cur_sol.mcs_to_patterns_sharing))
+            cur_neighbor_mcs_to_pattern_sharing.update({mcs: patterns_indices})
             neighbor = self.Solution(cur_neighbor_mcs_to_pattern_sharing,cur_neighbor_pattern_to_tree_plan_map)
             neighbours.append(neighbor)
+            num_of_developed_neighbours += 1
+            left_possible_shares_dict.pop(mcs)
         return neighbours
 
     def build_tree_plan_with_mcses(self, mcses, pattern_idx):
         pattern = copy.deepcopy(self.patterns[pattern_idx])
         #dictionary between old event index to new event index- we use it later to update the modfied pattern statistics
-        old_to_new_indices_dict = {}
+        old_to_new_indices_dict = {i:i for i in range(self.patterns[pattern_idx].count_primitive_events())}
         args_to_remove = set()
         for mcs in mcses:
             args_to_remove = args_to_remove.union(mcs)
         #removing mces args from pattern
         for arg in args_to_remove:
-            pattern.full_structure.remove(arg)
-            pattern.positive_structure.remove(arg)
+            pattern.full_structure.args.remove(arg)
+            pattern.positive_structure.args.remove(arg)
 
-        operator = None
         if isinstance(pattern.full_structure, AndOperator):
-            operator = AndOperator
-        if isinstance(pattern.full_structure, SeqOperator):
-            operator = SeqOperator
-        if operator is None:
+            empty_subpattern_with_matching_top_operator = AndOperator()
+        elif isinstance(pattern.full_structure, SeqOperator):
+            empty_subpattern_with_matching_top_operator = SeqOperator()
+        else:
             raise ValueError("unknown operator type")
 
         #adding mcs as nested args in the end
-        addition = len(pattern.full_structure.get_all_event_names())
+
+        addition = len(pattern.full_structure.get_all_event_names()) if len(pattern.full_structure.args) else 0
         for mcs in mcses:
             for event in mcs:
                 old_to_new_indices_dict[
                     self.original_tree_plan_event_name_to_event_index_mapping_list[pattern_idx][event.name]
                 ] = addition
                 addition += 1
-            subpattern_to_add = operator.__init__(*list(mcs))
+            subpattern_to_add=copy.deepcopy(empty_subpattern_with_matching_top_operator)
+            subpattern_to_add.args = list(mcs)
             pattern.full_structure.args.append(subpattern_to_add)
-            pattern.positive_structure.append(subpattern_to_add)
+            pattern.positive_structure.args.append(subpattern_to_add)
 
         self.adjust_pattern_statistics(pattern, old_to_new_indices_dict, pattern_idx)
-        tree_plan = self.optimizer.build_initial_plan(self.initial_statistics,self.cost_model_type,pattern)
+        tree_plan = self.optimizer.build_initial_plan(self.initial_statistics, self.cost_model_type,pattern)
 
-        if isinstance(operator, SeqOperator):
+        if isinstance(pattern.full_structure, SeqOperator):
             leaves = tree_plan.root.get_leaves()
             for leaf in leaves:
                 leaf.event_index = self.original_tree_plan_event_name_to_event_index_mapping_list[pattern_idx][leaf.event_name]
+
+        return tree_plan
 
 
     def adjust_pattern_statistics(self, pattern, old_to_new_indices_dict,pattern_idx):
@@ -387,10 +349,6 @@ class LocalSearchTreePlanMerger:
                 if old_to_new_indices_dict[i] != i or old_to_new_indices_dict[j] != j:
                     pattern_selectivity_matrix[i][j]=original_selectivity_matrix[i][j]
 
-
-
-
-
     def stopping_criterion(self):
         return (datetime.now() - self.start_date) >= (self.time_limit - timedelta(seconds=0.1))
 
@@ -403,21 +361,9 @@ class LocalSearchTreePlanMerger:
             You can use between two local search heuristics: Tabu-L and Simulated Annealing by give the correct parameters
             to runTest function (see Examples in test).
         """
-        initial_solution = self.initial_solution
-        neighbours = self.neighbourhood(initial_solution)
-        check=5
-
+        pass
 
 
 
     def simulated_annealing_merge_tree_plans(self):
         pass
-
-        while (datetime.now() - self.start_date) < (self.time_limit - timedelta(seconds=0.1)):
-            cur_state = self.heuristic.get_best_neighboor()
-            if cur_state.cost < best_state.cost:
-                best_state = cur_state
-        return SubTreeSharingTreePlanMerger().merge_tree_plans(self.__create_pattern_to_tree_plan_map(best_state))
-
-
-        nt_name]

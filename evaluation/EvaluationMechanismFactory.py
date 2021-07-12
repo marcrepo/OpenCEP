@@ -102,6 +102,8 @@ class EvaluationMechanismFactory:
                 eval_mechanism_params.optimizer_params.tree_plan_params.tree_plan_merger_params, patterns,
                 initial_statistics,cost_model_type, optimizer)
 
+
+
         return EvaluationMechanismFactory.__create_tree_based_evaluation_mechanism_by_update_type(
             pattern_to_tree_plan_map, eval_mechanism_params.storage_params, runtime_statistics_collector, optimizer,
             optimizer_params.statistics_updates_time_window, eval_mechanism_params.tree_update_type)

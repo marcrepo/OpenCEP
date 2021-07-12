@@ -118,10 +118,14 @@ class CompositeStructure(PatternStructure, ABC):
         return True
 
     def __hash__(self):
+        return hash(frozenset(self.hash_objects()))
+
+    def hash_objects(self):
         hash_objects = []
         for arg in self.args:
             hash_objects.extend(arg.hash_objects())
-        return hash(frozenset(hash_objects))
+        return hash_objects
+
 
     def contains_event(self, event_name: str):
         for arg in self.args:

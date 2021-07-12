@@ -35,11 +35,12 @@ class TabuSearch:
             # update the current solution with the new solution
             self.curr_sol = new_solution
             # adding new_solution to tabu list and if list is to long we will delete first element
-            self.tabu_set.add(new_solution.get_tabu_list_store_info())
-            self.tabu_list.append(new_solution.get_tabu_list_store_info())
+            self.tabu_set.add(frozenset(new_solution.get_tabu_list_store_info()))
+            self.tabu_list.append(frozenset(new_solution.get_tabu_list_store_info()))
             if len(self.tabu_list) > self.max_tabu_list_len:
-                self.tabu_set.remove(new_solution.get_tabu_list_store_info())
-                self.tabu_list.pop(0)
+                info_to_remove_from_tabu_set = self.tabu_list.pop(0)
+                self.tabu_set.remove(info_to_remove_from_tabu_set)
+
 
             # return best solution found
-        return self.best_sol
+        return self.best_sol.relevant_part_to_return()

@@ -244,3 +244,16 @@ class Pattern:
         return "\nPattern structure: %s\nCondition: %s\nTime window: %s\n\n" % (self.full_structure,
                                                                                 self.condition,
                                                                                 self.window)
+
+    def are_patterns_identical_for_local_search(self, other):
+        """
+        Return true iff patterns will have exact same tree plan and thus there tree plans will be shared fully by subtree merger.
+        """
+        return self.full_structure == other.full_structure and self.condition == other.condition
+
+    def __eq__(self, other):
+        return self.full_structure == other.full_structure and self.condition == other.condition and self.window == other.window
+
+    def __hash__(self):
+        return hash(self.__repr__())
+

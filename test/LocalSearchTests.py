@@ -52,6 +52,65 @@ sub_tree_sharing_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     storage_params=TreeStorageParameters(sort_storage=False, clean_up_interval=10, prioritize_sorting_by_timestamp=True))
 
 
+"""
+Correctness only test
+"""
+def LocalSearchFirstTest(createTestFile=False):
+    pattern0 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c#0"), PrimitiveEventStructure("amzn", "am#0")
+                   ),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern1 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
+                    ),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c#2"),PrimitiveEventStructure("amzn", "am#2")
+                    ),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+    pattern3 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a#3"),
+                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
+                    PrimitiveEventStructure("amzn", "am#3")
+                    ),
+        AndCondition(),
+        timedelta(minutes=5)
+    )
+
+    selectivityMatrix = [[0.11, 0.12, 0.13, 0.14],
+                         [0.21,0.22, 0.23, 0.24],
+                         [0.31 , 0.32, 0.33, 0.34],
+                         [0.41, 0.42, 0.43, 0.44],
+                         ]
+    arrivalRates = [0.1, 0.2, 0.3, 0.4]
+
+    pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("other", [pattern0, pattern1, pattern2, pattern3], createTestFile, local_search_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
+
+
+
+
 """ MPG(maximal common subpatterns graph) only tests """
 #todo comment: in mcs we dont care about the conditions
 
@@ -300,58 +359,7 @@ def nested_And(createTestFile=False):
 
     runMultiTest("other", [pattern0,pattern1], createTestFile, sub_tree_sharing_eval_mechanism_params, eventStream=nasdaqEventStreamTiny)
 
-def nested_And_2(createTestFile=False):
-    pattern0 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
-                    PrimitiveEventStructure("CBRL", "c#0"),PrimitiveEventStructure("amzn", "am#0")
-                   ),
-        AndCondition(),
-        timedelta(minutes=5)
-    )
-    pattern1 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
-                    PrimitiveEventStructure("CBRL", "c1"), PrimitiveEventStructure("CBRL", "c2"),
-                    ),
-        AndCondition(),
-        timedelta(minutes=5)
-    )
-    pattern2 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
-                    PrimitiveEventStructure("CBRL", "c#2"),PrimitiveEventStructure("amzn", "am#2")
-                    ),
-        AndCondition(),
-        timedelta(minutes=5)
-    )
-    pattern3 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a#3"),
-                    PrimitiveEventStructure("CBRL", "c1"), PrimitiveEventStructure("CBRL", "c2"),
-                    PrimitiveEventStructure("amzn", "am#3")
-                    ),
-        AndCondition(),
-        timedelta(minutes=5)
-    )
 
-    selectivityMatrix = [[0.11, 0.12, 0.13, 0.14],
-                         [0.21,0.22, 0.23, 0.24],
-                         [0.31 , 0.32, 0.33, 0.34],
-                         [0.41, 0.42, 0.43, 0.44],
-                         ]
-    arrivalRates = [0.1, 0.2, 0.3, 0.4]
-
-    pattern0.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    runMultiTest("other", [pattern0, pattern1, pattern2, pattern3], createTestFile, local_search_eval_mechanism_params,
-                 eventStream=nasdaqEventStreamTiny)
 
 def seq_resarch_nested(createTestFile=False):
     pattern0 = Pattern(
@@ -569,3 +577,69 @@ def local_search_test(createTestFile=False):
 
     runMultiTest("tom-test", [patternA1, patternA2, patternA3, patternB1, patternB2], createTestFile, local_search_eval_mechanism_params,
                  expected_file_name="DifferentTimeStamp")
+
+    #todo: types of test
+    #mpg tests
+    #cost tests
+    #structual tests
+
+    """
+    correctness_only_tests
+    """
+
+def samePatternSharingRoot_local_search_correctness(createTestFile=False):
+    hierarchyPattern = Pattern(
+        AndOperator(PrimitiveEventStructure("AMZN", "a"), PrimitiveEventStructure("AAPL", "b"),
+                    PrimitiveEventStructure("GOOG", "c")),
+        AndCondition(
+            SmallerThanCondition(Variable("a", lambda x: x["Peak Price"]),
+                                 Variable("b", lambda x: x["Peak Price"])),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=1)
+
+    )
+
+    hierarchyPattern2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AMZN", "a"), PrimitiveEventStructure("AAPL", "b"),
+                    PrimitiveEventStructure("GOOG", "c")),
+        AndCondition(
+            SmallerThanCondition(Variable("a", lambda x: x["Peak Price"]),
+                                 Variable("b", lambda x: x["Peak Price"])),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=0.5)
+    )
+
+    hierarchyPattern3 = Pattern(
+        AndOperator(PrimitiveEventStructure("AMZN", "a"), PrimitiveEventStructure("AAPL", "b"),
+                    PrimitiveEventStructure("GOOG", "c")),
+        AndCondition(
+            SmallerThanCondition(Variable("a", lambda x: x["Peak Price"]),
+                                 Variable("b", lambda x: x["Peak Price"])),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=0.1)
+    )
+
+    selectivityMatrix = [[0.11, 0.12, 0.13],
+                         [0.21, 0.22, 0.23],
+                         [0.31, 0.32, 0.33],
+                         [0.41, 0.42, 0.43],
+                         ]
+    arrivalRates = [0.1, 0.2, 0.3]
+
+    hierarchyPattern.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                                     StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    hierarchyPattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                                      StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    hierarchyPattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                                      StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest('hierarchyMultiPattern', [hierarchyPattern, hierarchyPattern2, hierarchyPattern3], createTestFile,
+                 local_search_eval_mechanism_params)

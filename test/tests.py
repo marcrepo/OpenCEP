@@ -10,10 +10,12 @@ import test.EventProbabilityTests
 from test.NestedTests import *
 from test.UnitTests.test_storage import run_storage_tests
 from test.UnitTests.RuleTransformationTests import ruleTransformationTests
+from test.LocalSearchTests import *
+
 
 
 runTest.over_all_time = 0
-
+"""
 # basic functionality tests
 oneArgumentsearchTest()
 simplePatternSearchTest()
@@ -129,15 +131,18 @@ freezePolicy2PatternSearchTest()
 # storage tests
 sortedStorageTest()
 run_storage_tests()
-
+"""
 # multi-pattern tests
+"""
 leafIsRoot()
 distinctPatterns()
 threePatternsTest()
 samePatternDifferentTimeStamps()
 rootAndInner()
 onePatternIncludesOther()
+
 samePatternSharingRoot()
+
 severalPatternShareSubtree()
 notInTheBeginningShare()
 multipleParentsForInternalNode()
@@ -151,6 +156,13 @@ samePatternSharingRootFullSharing()
 severalPatternShareSubtreeFullSharing()
 notInTheBeginningShareFullSharing()
 multipleParentsForInternalNodeFullSharing()
+"""
+
+#local_search_tests
+LocalSearchFirstTest()
+samePatternSharingRoot_local_search_correctness()
+
+
 
 # event occurrence probability tests
 test.EventProbabilityTests.oneArgumentsearchTest()
