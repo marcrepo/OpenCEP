@@ -122,7 +122,7 @@ class EvaluationMechanismFactory:
             return SubTreeSharingTreePlanMerger().merge_tree_plans(pattern_to_tree_plan_map)
         # todo comment: form here our code need to start running
         if tree_plan_merge_approach == MultiPatternTreePlanMergeApproaches.TREE_PLAN_LOCAL_SEARCH:
-            return LocalSearchTreePlanMerger(patterns, pattern_to_tree_plan_map, tree_plan_merger_params,
+             return LocalSearchTreePlanMerger(patterns, pattern_to_tree_plan_map, tree_plan_merger_params,
                                              initial_statistics, cost_model_type, optimizer).merge_tree_plans()
         raise Exception("Unsupported multi-pattern merge algorithm %s" % (tree_plan_merge_approach,))
 

@@ -57,7 +57,9 @@ nonFrequencyTailoredPatternSearchTest()
 frequencyTailoredPatternSearchTest()
 
 # tree structure tests - CEP object only created not used
+
 structuralTest1()
+
 structuralTest2()
 structuralTest3()
 structuralTest4()
@@ -160,7 +162,8 @@ multipleParentsForInternalNodeFullSharing()
 
 #local_search_tests
 LocalSearchFirstTest()
-samePatternSharingRoot_local_search_correctness()
+same_cost_test()
+obvious()
 
 
 

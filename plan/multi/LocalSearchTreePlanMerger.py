@@ -1,3 +1,9 @@
+"""
+The localSearchTreePlanMerger uses local search optimization method for combining tree plans of different patterns.
+This file contains also MPG-MultiPatternGraph class that stores the different mutual parts between patterns.
+The user can choose its own meta-heuristic and to add them to Tabu-search and Simulated Annealing existing now.
+"""
+
 import copy
 from datetime import datetime
 from typing import Dict
@@ -10,120 +16,7 @@ import random
 from plan.multi.LocalSearchMetaHeuristics.Tabu_search import *
 
 
-class MPG:
-    def __init__(self, patterns: Pattern or List[Pattern]):
-        """
-        This is the class representing a mapping between a patterns and there maximal common sub patterns
-        and  a mapping between maximal common sub pattern to the patterns which contains it.
-        """
-        self.patterns = patterns
-        self.mcs_to_patterns = {}
-        self.pattern_to_various_mcs = {p: set() for p in patterns}
-        self.__create_mpg(patterns if isinstance(patterns, List) else list(patterns))
-
-
-
-    def __create_mpg(self, patterns):
-        """i"""
-        for p1 in range(len(patterns)):
-            for p2 in range(p1 + 1, len(patterns)):
-                maximal_common_subpatterns = self.__find_maximal_common_subpatterns(p1, p2)
-                # todo: make every mcs in the list not empty
-                for mcs in maximal_common_subpatterns:
-                    if mcs == frozenset():
-                        break
-                    self.pattern_to_various_mcs[patterns[p1]].add(mcs)
-                    self.pattern_to_various_mcs[patterns[p2]].add(mcs)
-                    if mcs in self.mcs_to_patterns.keys():
-                        self.mcs_to_patterns[mcs].add(p1)
-                        self.mcs_to_patterns[mcs].add(p2)
-                    else:
-                        self.mcs_to_patterns[mcs] = {p1, p2}
-
-    def __find_maximal_common_subpatterns(self, p1_idx: int, p2_idx: int) -> Pattern:
-        """
-        p1_idx, p2_idx: indices in patterns list
-        :return:  maximal common subpatterns(mcs) of pattern1 and pattern2
-        notes:
-        The next are cases of mcs that we will not keep in the mpg and use later in our local search,
-        because subtree merger already merges them. When subtree merger merges mcs the pattern has an optimal tree plan,
-        and when we share via local search method it has not.
-        Thus we won't use the below cases of mcs in our local search, in order to get both sharing and tree plan optimality:
-        1) Different operators: Seq(a,b) , And(a,b)
-        2) Same operator with one argument: Seq(a,....), seq(a.....) => mcs= seq(a)
-        3) One pattern is a nested argument of the other.
-        4) Two identical patterns will have no mcs in the mpg
-        In addition we won't include nested subpattern in our mcs for the same reason above.
-        """
-        p1 = self.patterns[p1_idx]
-        p2 = self.patterns[p2_idx]
-
-        if type(p1.full_structure) is not type(p2.full_structure):
-            return []
-
-        if p1.are_patterns_identical_for_local_search(p2):
-            return []
-
-        return self.__find_maximal_common_subpatterns_helper(p1, p2)
-
-
-
-    def find_one_mcs_per_intersection(self, events_intersection, p1, p2):
-        events_intersection_names_set = set()
-        for event in events_intersection:
-            events_intersection_names_set = events_intersection_names_set.union(event.get_all_event_names())
-
-        p1_event_conditions_filtered_by_intersection = p1.condition.get_condition_of(events_intersection_names_set,
-                                                                                     get_kleene_closure_conditions=False,
-                                                                                     consume_returned_conditions=False).get_conditions_list()
-        p2_event_conditions_filtered_by_intersection = p2.condition.get_condition_of(events_intersection_names_set,
-                                                                                     get_kleene_closure_conditions=False,
-                                                                                     consume_returned_conditions=False).get_conditions_list()
-
-        p1_filtered_only_conditions = [condition for condition in p1_event_conditions_filtered_by_intersection
-                                       if condition not in p2_event_conditions_filtered_by_intersection]
-        p2_filtered_only_conditions = [condition for condition in p2_event_conditions_filtered_by_intersection
-                                       if condition not in p1_event_conditions_filtered_by_intersection]
-
-        p1_filtered_only_conditions_names = set()
-        for condition in p1_filtered_only_conditions:
-            p1_filtered_only_conditions_names = p1_filtered_only_conditions_names.union(condition.get_event_names())
-
-        p2_filtered_only_conditions_names = set()
-        for condition in p2_filtered_only_conditions:
-            p2_filtered_only_conditions_names = p2_filtered_only_conditions_names.union(condition.get_event_names())
-
-        events_intersection_after_condition_filtering = copy.deepcopy(events_intersection)
-        for event in events_intersection:
-            for name in event.get_all_event_names():
-                if name in p1_filtered_only_conditions_names or name in p2_filtered_only_conditions_names:
-                    events_intersection_after_condition_filtering.remove(event)
-                    break
-
-        return frozenset(events_intersection_after_condition_filtering)
-
-    def __find_maximal_common_subpatterns_helper(self, p1: Pattern, p2: Pattern):
-        """
-        :return: maximal common subpattern for 2 equal operators
-        """
-        result = []
-        events_intersections = p1.full_structure.calc_structure_intersections(p2.full_structure)
-        if events_intersections is None:
-            return result
-        for events_intersection in events_intersections:
-            if events_intersection is not None:
-                mcs = self.find_one_mcs_per_intersection(events_intersection,p1,p2)
-                if len(mcs) > 1:
-                    result.append(mcs)
-        return result
-
-
-
-
-
-
-
-MAX_NEIGHBOURS_TO_DEVELOP = 1
+MAX_NEIGHBOURS_TO_DEVELOP = 3
 
 
 class LocalSearchTreePlanMerger:
@@ -134,6 +27,9 @@ class LocalSearchTreePlanMerger:
     Documentation for how we developing a new neighbour(other pattern to tree plan map) is presented under n-vertex function.
     You can use between two local search heuristics: Tabu-L and Simulated Annealing by give the correct parameters
     to runTest function (see Examples in test).
+    This class implements the following functions/classes for user defined local search meta-heuristics:
+    Neighborhood, Solution, Score, StoppingCriterion, you can understand the way you should use them by reviewing
+    LocalSearchMetaHeuristics.Tabu_search.py .
     """
 
     def __init__(self, patterns: Pattern or List[Pattern],
@@ -154,7 +50,7 @@ class LocalSearchTreePlanMerger:
                                                         for pattern, tree_plan in pattern_to_tree_plan_map.items()
                                                         ]
         # a list such that in place i there is a dictionary between pattern i nested args to its real nested indices in pattern
-        self.combined_args_to_real_index_map_list = self.init_combined_args_to_real_index_map_list()
+        self.combined_args_to_real_index_map_list = self.calc_combined_args_to_real_index_map_list(self.patterns)
         self.sub_tree_sharer = SubTreeSharingTreePlanMerger()
         #the initial pattern to tree plan map of local search is the one merged by subtree sharing
         self.pattern_to_tree_plan_map = self.sub_tree_sharer.merge_tree_plans(pattern_to_tree_plan_map)
@@ -171,10 +67,10 @@ class LocalSearchTreePlanMerger:
         self.time_limit = self.__set_time_limit(local_search_params[1])
 
 
-    def init_combined_args_to_real_index_map_list(self):
+    def calc_combined_args_to_real_index_map_list(self, patterns):
         combined_list = []
-        for i in range(len(self.patterns)):
-            pattern = self.patterns[i]
+        for i in range(len(patterns)):
+            pattern = patterns[i]
             pattern_dict = {}
             for j, arg in enumerate(pattern.full_structure.args):
                 if isinstance(arg, PrimitiveEventStructure):
@@ -240,7 +136,7 @@ class LocalSearchTreePlanMerger:
             tree_plan = pair[1]
             cost += self.__cost_model.get_plan_cost(pattern, tree_plan.root, pattern.statistics,
                                                     is_local_search=True,
-                                                    event_fixing_mapping=self.combined_args_to_real_index_map_list,
+                                                    event_fixing_mapping=self.original_tree_plan_event_name_to_event_index_mapping_list,
                                                     pattern_idx=idx)
         sol.cost = cost
         return cost
@@ -279,6 +175,7 @@ class LocalSearchTreePlanMerger:
             for pattern_idx in patterns_indices:
                 pattern_mcs_list = [mcs for mcs in cur_sol_mcs if pattern_idx in cur_sol.mcs_to_patterns_sharing[mcs]]+[mcs]
                 cur_neighbor_pattern_to_tree_plan_map[self.patterns[pattern_idx]] = self.build_tree_plan_with_mcses(pattern_mcs_list, pattern_idx)
+            self.sub_tree_sharer.merge_tree_plans(cur_neighbor_pattern_to_tree_plan_map)
             cur_neighbor_mcs_to_pattern_sharing = (copy.deepcopy(cur_sol.mcs_to_patterns_sharing))
             cur_neighbor_mcs_to_pattern_sharing.update({mcs: patterns_indices})
             neighbor = self.Solution(cur_neighbor_mcs_to_pattern_sharing,cur_neighbor_pattern_to_tree_plan_map)
@@ -361,9 +258,119 @@ class LocalSearchTreePlanMerger:
             You can use between two local search heuristics: Tabu-L and Simulated Annealing by give the correct parameters
             to runTest function (see Examples in test).
         """
-        pass
 
 
 
-    def simulated_annealing_merge_tree_plans(self):
-        pass
+
+
+
+class MPG:
+    def __init__(self, patterns: Pattern or List[Pattern]):
+        """
+        Mcs stands for maximal common subpattern (a mutual part for 2 patterns or more).
+        This class represents 2 important mappings:
+        1) Pattern to the mces it containts.
+        Usually will be one mcs, but in case of SeqOperator for example could be 2, for better understanding
+        see SeqOperator.calc_structure_intersections documentation.
+        2) Mcs to the patterns which contains it.
+        """
+        self.patterns = patterns
+        self.mcs_to_patterns = {}
+        self.pattern_to_various_mcs = {p: set() for p in patterns}
+        self.__create_mpg(patterns if isinstance(patterns, List) else list(patterns))
+
+    def __create_mpg(self, patterns):
+
+        for p1 in range(len(patterns)):
+            for p2 in range(p1 + 1, len(patterns)):
+                maximal_common_subpatterns = self.__find_maximal_common_subpatterns(p1, p2)
+                # todo: make every mcs in the list not empty
+                for mcs in maximal_common_subpatterns:
+                    if mcs == frozenset():
+                        break
+                    self.pattern_to_various_mcs[patterns[p1]].add(mcs)
+                    self.pattern_to_various_mcs[patterns[p2]].add(mcs)
+                    if mcs in self.mcs_to_patterns.keys():
+                        self.mcs_to_patterns[mcs].add(p1)
+                        self.mcs_to_patterns[mcs].add(p2)
+                    else:
+                        self.mcs_to_patterns[mcs] = {p1, p2}
+
+    def __find_maximal_common_subpatterns(self, p1_idx: int, p2_idx: int) -> Pattern:
+        """
+        p1_idx, p2_idx: indices in patterns list
+        :return:  maximal common subpatterns(mcs) of pattern1 and pattern2
+        notes:
+        The next are cases of mcs that we will not keep in the mpg and use later in our local search,
+        because subtree merger already merges them. When subtree merger merges mcs the pattern has an optimal tree plan,
+        and when we share via local search method it has not.
+        Thus we won't use the below cases of mcs in our local search, in order to get both sharing and tree plan optimality:
+        1) Different operators: Seq(a,b) , And(a,b)
+        2) Same operator with one argument: Seq(a,....), seq(a.....) => mcs= seq(a)
+        3) One pattern is a nested argument of the other.
+        4) Two identical patterns will have no mcs in the mpg
+        In addition we won't include nested subpattern in our mcs for the same reason above.
+        """
+        p1 = self.patterns[p1_idx]
+        p2 = self.patterns[p2_idx]
+
+        if type(p1.full_structure) is not type(p2.full_structure):
+            return []
+
+        if p1.are_patterns_identical_for_local_search(p2):
+            return []
+
+        return self.__find_maximal_common_subpatterns_helper(p1, p2)
+
+    def find_one_mcs_per_intersection(self, events_intersection, p1, p2):
+        events_intersection_names_set = set()
+        for event in events_intersection:
+            events_intersection_names_set = events_intersection_names_set.union(event.get_all_event_names())
+
+        p1_event_conditions_filtered_by_intersection = p1.condition.get_condition_of(events_intersection_names_set,
+                                                                                     get_kleene_closure_conditions=False,
+                                                                                     consume_returned_conditions=False).get_conditions_list()
+        p2_event_conditions_filtered_by_intersection = p2.condition.get_condition_of(events_intersection_names_set,
+                                                                                     get_kleene_closure_conditions=False,
+                                                                                     consume_returned_conditions=False).get_conditions_list()
+
+        p1_filtered_only_conditions = [condition for condition in p1_event_conditions_filtered_by_intersection
+                                       if condition not in p2_event_conditions_filtered_by_intersection]
+        p2_filtered_only_conditions = [condition for condition in p2_event_conditions_filtered_by_intersection
+                                       if condition not in p1_event_conditions_filtered_by_intersection]
+
+        p1_filtered_only_conditions_names = set()
+        for condition in p1_filtered_only_conditions:
+            p1_filtered_only_conditions_names = p1_filtered_only_conditions_names.union(condition.get_event_names())
+
+        p2_filtered_only_conditions_names = set()
+        for condition in p2_filtered_only_conditions:
+            p2_filtered_only_conditions_names = p2_filtered_only_conditions_names.union(condition.get_event_names())
+
+        events_intersection_after_condition_filtering = copy.deepcopy(events_intersection)
+        for event in events_intersection:
+            for name in event.get_all_event_names():
+                if name in p1_filtered_only_conditions_names or name in p2_filtered_only_conditions_names:
+                    events_intersection_after_condition_filtering.remove(event)
+                    break
+
+        return frozenset(events_intersection_after_condition_filtering)
+
+    def __find_maximal_common_subpatterns_helper(self, p1: Pattern, p2: Pattern):
+        """
+        :return: maximal common subpattern for 2 equal operators
+        """
+        result = []
+        events_intersections = p1.full_structure.calc_structure_intersections(p2.full_structure)
+        if events_intersections is None:
+            return result
+        for events_intersection in events_intersections:
+            if events_intersection is not None:
+                mcs = self.find_one_mcs_per_intersection(events_intersection, p1, p2)
+                if len(mcs) > 1:
+                    result.append(mcs)
+        return result
+
+
+
+

@@ -101,17 +101,11 @@ class IntermediateResultsTreeCostModel(TreeCostModel):
             return event_index, tree.cost, tree.cost
 
         if isinstance(tree, TreePlanNestedNode):
-            nested_event_index = [tree.nested_event_index]
-            if tree.is_shared:
-                nested_event_index = get_real_pattern_indices_for_computing_cost_without_diving(
-                                                                                        tree, pattern_idx, event_fixing_mapping,
-                                                                                        )
-            if tree.is_cost_counted:
-                return nested_event_index, tree.cost, 0
-            else:
-                tree.is_cost_counted=True
-
-            return nested_event_index, tree.cost, tree.cost
+            return IntermediateResultsTreeCostModel.__get_plan_cost_local_search_aux(tree.sub_tree_plan,
+                                                                                     selectivity_matrix,
+                                                                                     arrival_rates,
+                                                                                     time_window, pattern_idx,
+                                                                                     event_fixing_mapping)
 
         if isinstance(tree, TreePlanUnaryNode):
             return IntermediateResultsTreeCostModel.__get_plan_cost_local_search_aux(tree.child,
@@ -156,12 +150,14 @@ def get_real_pattern_indices_for_computing_cost_without_diving(node,pattern_idx,
     """
     #todo: add unary node later
     if isinstance(node, TreePlanLeafNode):
-        return [event_fixing_mapping[pattern_idx][node.event_name]]
+        check = [event_fixing_mapping[pattern_idx][node.event_name]]
+        return check
     if isinstance(node, TreePlanNestedNode):
-        return [event_fixing_mapping[pattern_idx][frozenset(node.args)]]
+        return get_real_pattern_indices_for_computing_cost_without_diving(node.sub_tree_plan, pattern_idx, event_fixing_mapping)
     if isinstance(node, TreePlanBinaryNode):
         return get_real_pattern_indices_for_computing_cost_without_diving(node.left_child,pattern_idx, event_fixing_mapping)\
                +get_real_pattern_indices_for_computing_cost_without_diving(node.right_child,pattern_idx, event_fixing_mapping)
+    return
 
 
 class TreeCostModelFactory:
