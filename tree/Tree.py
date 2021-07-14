@@ -166,8 +166,15 @@ class Tree:
 
         elif isinstance(tree_plan, TreePlanLeafNode):
             # This is a leaf
+            #todo: if for loccal search unuse green
+
+            leaf_primitive_event_structure = PrimitiveEventStructure(tree_plan.event_type, tree_plan.event_name)
+            node = self.__handle_primitive_event(tree_plan, leaf_primitive_event_structure,
+                                                 pattern_params, parent, consumption_policy)
+            """
             node = self.__handle_primitive_event(tree_plan, args[tree_plan.original_event_index],
                                                  pattern_params, parent, consumption_policy)
+            """
 
         elif isinstance(tree_plan, TreePlanNestedNode):
             # This is a nested node, therefore needs to use construct a subtree of this nested tree, recursively.

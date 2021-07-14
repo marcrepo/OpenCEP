@@ -48,6 +48,7 @@ class Optimizer(ABC):
             initial_tree_plan = self.build_new_plan(initial_statistics, pattern)
             self._tree_plan_builder = temp_tree_plan_builder
         else:
+            #initial_tree_plan = self.build_new_plan(initial_statistics, pattern)
             initial_tree_plan = self.build_new_plan(pattern.statistics, pattern)
         return initial_tree_plan
 

@@ -109,7 +109,6 @@ class SelectivityStatistics(Statistics):
         else:
             #self.__selectivity_matrix = predefined_statistics
             self.__selectivity_matrix = copy.deepcopy(predefined_statistics)
-        #todo comment: why we do init map in both cases
         self.__init_maps(pattern)
 
     def update(self, data):

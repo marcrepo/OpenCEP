@@ -41,6 +41,6 @@ class TabuSearch:
                 info_to_remove_from_tabu_set = self.tabu_list.pop(0)
                 self.tabu_set.remove(info_to_remove_from_tabu_set)
 
-
             # return best solution found
+
         return self.best_sol.relevant_part_to_return()

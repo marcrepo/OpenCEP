@@ -33,36 +33,267 @@ currentPath = pathlib.Path(os.path.dirname(__file__))
 absolutePath = str(currentPath.parent)
 sys.path.append(absolutePath)
 
-local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
+bushy_tree_local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,
                                          tree_plan_params=
                                          TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.DYNAMIC_PROGRAMMING_BUSHY_TREE,
                               cost_model_type=TreeCostModels.INTERMEDIATE_RESULTS_TREE_COST_MODEL,
                               tree_plan_merger_type=MultiPatternTreePlanMergeApproaches.TREE_PLAN_LOCAL_SEARCH,
-                              tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
+                              tree_plan_merger_params=['TabuSearch', timedelta(seconds=30),True])),
     storage_params=TreeStorageParameters(sort_storage=False, clean_up_interval=10, prioritize_sorting_by_timestamp=True))
 
-trivial_left_deep_tree_local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
+left_deep_tree_local_search_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,
                                          tree_plan_params=
-                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.TRIVIAL_LEFT_DEEP_TREE,
+                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.GREEDY_LEFT_DEEP_TREE,
                               cost_model_type=TreeCostModels.INTERMEDIATE_RESULTS_TREE_COST_MODEL,
                               tree_plan_merger_type=MultiPatternTreePlanMergeApproaches.TREE_PLAN_LOCAL_SEARCH,
-                              tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
+                              tree_plan_merger_params=['TabuSearch', timedelta(seconds=30),True])),
     storage_params=TreeStorageParameters(sort_storage=False, clean_up_interval=10, prioritize_sorting_by_timestamp=True))
 
 sub_tree_sharing_eval_mechanism_params = TreeBasedEvaluationMechanismParameters(
     optimizer_params=OptimizerParameters(opt_type=OptimizerTypes.TRIVIAL_OPTIMIZER,
                                          tree_plan_params=
-                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.DYNAMIC_PROGRAMMING_LEFT_DEEP_TREE,
+                                         TreePlanBuilderParameters(builder_type=TreePlanBuilderTypes.GREEDY_LEFT_DEEP_TREE,
                               cost_model_type=TreeCostModels.INTERMEDIATE_RESULTS_TREE_COST_MODEL,
                               tree_plan_merger_type=MultiPatternTreePlanMergeApproaches.TREE_PLAN_SUBTREES_UNION,
                               tree_plan_merger_params=['TabuSearch', timedelta(seconds=30)])),
     storage_params=TreeStorageParameters(sort_storage=False, clean_up_interval=10, prioritize_sorting_by_timestamp=True))
 
 """
-Correctness only test
+Correctness tests- Those test check that we got the expected matches like all other tests. 
 """
+def leftDeepSimple(createTestFile=False):
+    pattern1 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c#0"), PrimitiveEventStructure("AMZN", "am#0")
+                    ),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+    pattern2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
+                    ),
+        TrueCondition(),
+        timedelta(minutes=100)
+    )
+    pattern3 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c#2"), PrimitiveEventStructure("AMZN", "am#2")
+                    ),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+    pattern4 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a#3"),
+                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
+                    PrimitiveEventStructure("AMZN", "am#3")
+                    ),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+
+    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         ]
+    arrivalRates = [0.1, 0.1, 0.1, 0.1]
+
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern4.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("leftDeepSimple", [pattern1, pattern2, pattern3, pattern4], createTestFile,
+                 left_deep_tree_local_search_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
+
+def bushySimple(createTestFile=False):
+    pattern1 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c#0"), PrimitiveEventStructure("AMZN", "am#0")
+                    ),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+    pattern2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
+                    ),
+        TrueCondition(),
+        timedelta(minutes=100)
+    )
+    pattern3 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "c#2"), PrimitiveEventStructure("AMZN", "am#2")
+                    ),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+    pattern4 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a#3"),
+                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
+                    PrimitiveEventStructure("AMZN", "am#3")
+                    ),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+
+    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         ]
+    arrivalRates = [0.1, 0.1, 0.1, 0.1]
+
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern4.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("bushySimple", [pattern1, pattern2, pattern3, pattern4], createTestFile,
+                 bushy_tree_local_search_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
+
+"""
+def nestedSeq(createTestFile=False):
+    
+    A test with nested SeqOperator
+    
+    pattern1 = Pattern(
+        AndOperator(SeqOperator(PrimitiveEventStructure("AMZN", "am#0"), PrimitiveEventStructure("AVID", "c#0")),
+                    PrimitiveEventStructure("AAPL", "a1"),PrimitiveEventStructure("AAPL", "a2")),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+    pattern2 = Pattern(
+        AndOperator(SeqOperator(PrimitiveEventStructure("AMZN", "am#0"), PrimitiveEventStructure("AVID", "c#0")),
+                    PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AAPL", "a3")),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+    pattern3 = Pattern(
+        AndOperator(SeqOperator(PrimitiveEventStructure("AMZN", "am#0"), PrimitiveEventStructure("AVID", "c#0")),
+                    PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
+                    PrimitiveEventStructure("AVID", "av")),
+        TrueCondition(),
+        timedelta(minutes=5)
+    )
+
+    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         ]
+    arrivalRates = [0.1, 0.1, 0.1, 0.1]
+
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    mutual_selectivityMatrix = [[1.0, 1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0, 1.0]
+                         ]
+    mutual_arrivalRates = [0.1, 0.1, 0.1, 0.1, 0.1]
+
+    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: mutual_selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: mutual_arrivalRates,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("nestedSeq", [pattern1, pattern2, pattern3], createTestFile,
+                 bushy_tree_local_search_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
+"""
+
+
+
+"""
+Cost Tests- Those are structual tests, we verifay that in the end of the local search we got the pattern to tree plan map 
+we expect to. 
+"""
+def obvious(createTestFile=False):
+    """
+    In
+    """
+    pattern1 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AMZN", "b"),
+                    PrimitiveEventStructure("AMZN", "c"), PrimitiveEventStructure("AMZN", "d")
+                   ),
+        AndCondition(
+            GreaterThanEqCondition(Variable("a1", lambda x: x["Peak Price"]), 137),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=10)
+    )
+    pattern2 = Pattern(
+        AndOperator(PrimitiveEventStructure("AAPL", "a2"), PrimitiveEventStructure("AMZN", "d"),
+                    PrimitiveEventStructure("AMZN", "c"), PrimitiveEventStructure("AMZN", "b"),
+                    ),
+        AndCondition(
+            GreaterThanEqCondition(Variable("a2", lambda x: x["Peak Price"]), 137),
+            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
+                                 Variable("c", lambda x: x["Peak Price"]))
+        ),
+        timedelta(minutes=10)
+    )
+    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         [1.0, 1.0, 1.0, 1.0],
+                         ]
+    arrivalRates = [0.1, 0.1, 0.1, 0.1]
+
+    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
+                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
+
+    runMultiTest("other2", [pattern1, pattern2], createTestFile,
+                 left_deep_tree_local_search_eval_mechanism_params,
+                 eventStream=nasdaqEventStreamTiny)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -466,221 +697,14 @@ def dpBPatternSearchTestTomCheck(createTestFile=False):
 #todo: support negative and other operators
 
 
-def local_search_test(createTestFile=False):
-    patternA1 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 135),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=5)
-    )
-    patternA2 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"), PrimitiveEventStructure("AAPL", "c")),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 136),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=2)
-    )
-    patternA3 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a"), PrimitiveEventStructure("AAPL", "b"),
-                    PrimitiveEventStructure("AAPL", "c")),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 137),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=5)
-    )
 
-    #first neighbor ends
-
-    patternB1 = Pattern(
-        AndOperator(PrimitiveEventStructure("AMZN", "a"), PrimitiveEventStructure("AMZN", "b"),
-                    PrimitiveEventStructure("AMZN", "c")),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 136),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=2)
-    )
-
-    patternB2 = Pattern(
-        AndOperator(PrimitiveEventStructure("AMZN", "a"), PrimitiveEventStructure("AMZN", "b"),
-                    PrimitiveEventStructure("AMZN", "c")),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a", lambda x: x["Peak Price"]), 137),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=2)
-    )
-
-    #second neighbor ends
-
-    #now we chose one of the above neighbors
-
-    #iteration one finished
-
-    #now we do another iteration to try to share onther mcs
-
-    #finish second iteration and return best sharing plan
-
-    runMultiTest("tom-test", [patternA1, patternA2, patternA3, patternB1, patternB2], createTestFile, local_search_eval_mechanism_params,
-                 expected_file_name="DifferentTimeStamp")
 
     #todo: types of test
     #mpg tests: for beauty least important
     #cost tests:
     #corrrectness test: no nested, with nested, unary opertaor
 
-"""
-Cost Tests
-"""
-def same_cost_test(createTestFile=False):
-    pattern1 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AMZN", "b"),
-                    PrimitiveEventStructure("AMZN", "c"), PrimitiveEventStructure("AMZN", "d"))
-                   ,
-        AndCondition(
-            GreaterThanEqCondition(Variable("a1", lambda x: x["Peak Price"]), 137),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=10)
-    )
-    pattern2 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a2"), PrimitiveEventStructure("AMZN", "d"),
-                    PrimitiveEventStructure("AMZN", "c"), PrimitiveEventStructure("AMZN", "b"),
-                    ),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a2", lambda x: x["Peak Price"]), 137),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=10)
-    )
-    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         ]
-    arrivalRates = [0.1, 0.1, 0.1, 0.1]
 
-
-    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    runMultiTest("other2", [pattern1, pattern2], createTestFile,
-                 trivial_left_deep_tree_local_search_eval_mechanism_params,
-                 eventStream=nasdaqEventStreamTiny)
-
-
-
-def obvious(createTestFile=False):
-    pattern1 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AMZN", "b"),
-                    PrimitiveEventStructure("AMZN", "c"), PrimitiveEventStructure("AMZN", "d")
-                   ),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a1", lambda x: x["Peak Price"]), 137),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=10)
-    )
-    pattern2 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a2"), PrimitiveEventStructure("AMZN", "d"),
-                    PrimitiveEventStructure("AMZN", "c"), PrimitiveEventStructure("AMZN", "b"),
-                    ),
-        AndCondition(
-            GreaterThanEqCondition(Variable("a2", lambda x: x["Peak Price"]), 137),
-            SmallerThanCondition(Variable("b", lambda x: x["Peak Price"]),
-                                 Variable("c", lambda x: x["Peak Price"]))
-        ),
-        timedelta(minutes=10)
-    )
-    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         ]
-    arrivalRates = [0.1, 0.1, 0.1, 0.1]
-
-    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    runMultiTest("other2", [pattern1, pattern2], createTestFile,
-                 local_search_eval_mechanism_params,
-                 eventStream=nasdaqEventStreamTiny)
-
-"""
-correctness_only_tests
-"""
-
-def LocalSearchFirstTest(createTestFile=False):
-    pattern1 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
-                    PrimitiveEventStructure("AVID", "c#0"), PrimitiveEventStructure("AMZN", "am#0")
-                    ),
-        TrueCondition(),
-        timedelta(minutes=5)
-    )
-    pattern2 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
-                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
-                    ),
-        TrueCondition(),
-        timedelta(minutes=100)
-    )
-    pattern3 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a1"), PrimitiveEventStructure("AAPL", "a2"),
-                    PrimitiveEventStructure("AVID", "c#2"), PrimitiveEventStructure("AMZN", "am#2")
-                    ),
-        TrueCondition(),
-        timedelta(minutes=5)
-    )
-    pattern4 = Pattern(
-        AndOperator(PrimitiveEventStructure("AAPL", "a#3"),
-                    PrimitiveEventStructure("AVID", "c1"), PrimitiveEventStructure("AVID", "c2"),
-                    PrimitiveEventStructure("AMZN", "am#3")
-                    ),
-        TrueCondition(),
-        timedelta(minutes=5)
-    )
-
-    selectivityMatrix = [[1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         [1.0, 1.0, 1.0, 1.0],
-                         ]
-    arrivalRates = [0.1, 0.1, 0.1, 0.1]
-
-    pattern1.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern2.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern3.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    pattern4.set_statistics({StatisticsTypes.SELECTIVITY_MATRIX: selectivityMatrix,
-                             StatisticsTypes.ARRIVAL_RATES: arrivalRates})
-
-    runMultiTest("other", [pattern1, pattern2, pattern3, pattern4], createTestFile,
-                 local_search_eval_mechanism_params,
-                 eventStream=nasdaqEventStreamTiny)
 
 def samePatternSharingRoot_local_search_correctness(createTestFile=False):
     hierarchyPattern = Pattern(

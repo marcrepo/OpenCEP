@@ -12,8 +12,6 @@ from test.UnitTests.test_storage import run_storage_tests
 from test.UnitTests.RuleTransformationTests import ruleTransformationTests
 from test.LocalSearchTests import *
 
-
-
 runTest.over_all_time = 0
 """
 # basic functionality tests
@@ -57,9 +55,7 @@ nonFrequencyTailoredPatternSearchTest()
 frequencyTailoredPatternSearchTest()
 
 # tree structure tests - CEP object only created not used
-
 structuralTest1()
-
 structuralTest2()
 structuralTest3()
 structuralTest4()
@@ -133,18 +129,15 @@ freezePolicy2PatternSearchTest()
 # storage tests
 sortedStorageTest()
 run_storage_tests()
-"""
+
 # multi-pattern tests
-"""
 leafIsRoot()
 distinctPatterns()
 threePatternsTest()
 samePatternDifferentTimeStamps()
 rootAndInner()
 onePatternIncludesOther()
-
 samePatternSharingRoot()
-
 severalPatternShareSubtree()
 notInTheBeginningShare()
 multipleParentsForInternalNode()
@@ -158,14 +151,6 @@ samePatternSharingRootFullSharing()
 severalPatternShareSubtreeFullSharing()
 notInTheBeginningShareFullSharing()
 multipleParentsForInternalNodeFullSharing()
-"""
-
-#local_search_tests
-LocalSearchFirstTest()
-same_cost_test()
-obvious()
-
-
 
 # event occurrence probability tests
 test.EventProbabilityTests.oneArgumentsearchTest()
@@ -192,7 +177,6 @@ dpBNestedStructuralTest()
 dpLdNestedComplexStructuralTest()
 zstreamOrdNestedComplexStructuralTest()
 KCNestedStructuralTest()
-
 
 # Optimizer tests
 greedyInvariantOptimizerTreeChangeFailTest_1()
@@ -274,6 +258,12 @@ msftDrivRacePatternSearchTest_8()
 googleIncreasePatternSearchTest_8()
 amazonSpecificPatternSearchTest_8()
 googleAmazonLowPatternSearchTest_8()
+"""
+
+#leftDeepSimple()
+#bushySimple()
+nestedSeq()
+#obvious()
 
 
 # benchmarks
