@@ -166,7 +166,7 @@ class Tree:
 
         elif isinstance(tree_plan, TreePlanLeafNode):
             # This is a leaf
-            #todo: if for loccal search unuse green
+            #todo: if Non loccal search use green
 
             leaf_primitive_event_structure = PrimitiveEventStructure(tree_plan.event_type, tree_plan.event_name)
             node = self.__handle_primitive_event(tree_plan, leaf_primitive_event_structure,

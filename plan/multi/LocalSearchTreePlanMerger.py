@@ -36,7 +36,6 @@ class MPG:
         for p1 in range(len(patterns)):
             for p2 in range(p1 + 1, len(patterns)):
                 maximal_common_subpatterns = self.__find_maximal_common_subpatterns(p1, p2)
-                # todo: make every mcs in the list not empty
                 for mcs in maximal_common_subpatterns:
                     if mcs == frozenset():
                         break
@@ -180,8 +179,6 @@ class LocalSearchTreePlanMerger:
         """
         Returns a dictionary between pattern to its initial cost before local search starts to run.
         """
-        #todo: implement the cost function in a way that if p0 and p1 sharing mcs a than the cost of the p0 will include
-        #todo: the mcs and of p1 won't - to write a good decomentaion for that
         dict = {}
         for idx, pair in enumerate(pattern_to_tree_plan_map.items()):
             pattern = pair[0]
@@ -213,6 +210,11 @@ class LocalSearchTreePlanMerger:
     """------------Functions for user defined local search heuristics------------------------------------------------"""
 
     class Solution:
+        """
+        Represents a possible solution in the solution space.
+        The solution contains mcs_to_pattern_sharing- a key do distinguish between 2 solutions - usefull for many meta heuristics.
+        In the end of local search we return pattern to tree plan map of best solution.
+        """
         def __init__(self, mcs_to_patterns_sharing, pattern_to_tree_plan_map):
             # a hash between each mcs that is shared inside the solution to the patterns that are sharing it in the solution
             self.mcs_to_patterns_sharing = mcs_to_patterns_sharing
@@ -226,6 +228,9 @@ class LocalSearchTreePlanMerger:
             return self.pattern_to_tree_plan_map
 
     def score(self, sol: Solution):
+        """
+        Calculates solution score.
+        """
         cost = 0
         for idx, pair in enumerate(sol.pattern_to_tree_plan_map.items()):
             pattern = pair[0]
@@ -257,7 +262,7 @@ class LocalSearchTreePlanMerger:
     def neighbourhood(self, cur_sol:Solution):
         """
         An implementation to n-vertex neighborhood fucntion presented in article.
-        returns a new pattern to tree plan map which created in that way:...............
+        Each neighbor is of class solution
         """
         num_of_developed_neighbours = 0
         neighbours = []
@@ -328,6 +333,10 @@ class LocalSearchTreePlanMerger:
 
 
     def adjust_pattern_statistics(self, pattern, old_to_new_indices_dict,pattern_idx):
+        """
+        When we use nesting to share mcs in a pattern, this function changes the original statistics such that
+        nesting will not effect the correctness.
+        """
         #the pattern here is a deep copy of the original pattern the user gave
         #before change its statistics are equivalent to the statistics the user gave
         original_arrival_rates = self.patterns[pattern_idx].statistics[StatisticsTypes.ARRIVAL_RATES]
@@ -346,17 +355,12 @@ class LocalSearchTreePlanMerger:
                     pattern_selectivity_matrix[i][j]=original_selectivity_matrix[i][j]
 
     def stopping_criterion(self):
+        """
+        Time Stopping Criterion for local search.
+        """
         return (datetime.now() - self.start_date) >= (self.time_limit - timedelta(seconds=0.1))
 
-    def tabu_search_merge_tree_plans(self):
-        """
-            Merges the given patterns tree by sharing equivalent subtrees found via local search.
-            We do a local search for lowest cost pattern to tree plan map
-            We starting from initial state that is the pattern to tree plan map after a regular subtree sharing merger run.
-            Documentation for how we developing a new neighbour(other pattern to tree plan map) is presented under n-vertex function.
-            You can use between two local search heuristics: Tabu-L and Simulated Annealing by give the correct parameters
-            to runTest function (see Examples in test).
-        """
+
 
 
 

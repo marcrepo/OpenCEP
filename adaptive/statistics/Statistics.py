@@ -157,7 +157,6 @@ class SelectivityStatistics(Statistics):
                     if atomic_condition:
                         atomic_condition_id = str(atomic_condition)
                         self.__relevant_indices.add((i, j))
-                        #todo comment: maybe here there is a problem
                         self.__atomic_condition_to_total_map[atomic_condition_id] = 0.0
                         self.__atomic_condition_to_success_map[atomic_condition_id] = 0.0
                         if (i, j) in self.__indices_to_atomic_condition_map:

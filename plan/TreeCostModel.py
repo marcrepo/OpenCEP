@@ -83,7 +83,7 @@ class IntermediateResultsTreeCostModel(TreeCostModel):
     def __get_plan_cost_local_search_aux(tree: TreePlanNode, selectivity_matrix: List[List[float]],
                             arrival_rates: List[int], time_window: float, pattern_idx, event_fixing_mapping):
         """
-        A helper function for calculating the cost function of the given tree.
+        Calculates a multi pattern tree cost, with possibly mutual parts between same trees.
         """
         # calculate base case: tree is a leaf.
         if isinstance(tree, TreePlanLeafNode):
@@ -149,7 +149,12 @@ def get_real_pattern_indices_for_computing_cost_without_diving(node,pattern_idx,
     In this
     """
     if isinstance(node, TreePlanLeafNode):
-        return [event_fixing_mapping[pattern_idx][node.event_name]]
+        check = [event_fixing_mapping[pattern_idx][node.event_name]]
+        return check
+    if isinstance(node, TreePlanNestedNode):
+        return get_real_pattern_indices_for_computing_cost_without_diving(node.sub_tree_plan, pattern_idx, event_fixing_mapping)
+    if isinstance(node, TreePlanUnaryNode):
+        return get_real_pattern_indices_for_computing_cost_without_diving(node.child, pattern_idx, event_fixing_mapping)
     if isinstance(node, TreePlanBinaryNode):
         return get_real_pattern_indices_for_computing_cost_without_diving(node.left_child,pattern_idx, event_fixing_mapping)\
                +get_real_pattern_indices_for_computing_cost_without_diving(node.right_child,pattern_idx, event_fixing_mapping)

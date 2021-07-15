@@ -167,7 +167,9 @@ nestedAscendingTest()
 nestedAscendingStructuralTest()
 greedyNestedTest()
 greedyNestedStructuralTest()
+
 iiGreedyNestedPatternSearchTest()
+
 iiGreedyNestedStructuralTest()
 greedyNestedComplexStructuralTest()
 dpLdNestedPatternSearchTest()
@@ -258,13 +260,21 @@ msftDrivRacePatternSearchTest_8()
 googleIncreasePatternSearchTest_8()
 amazonSpecificPatternSearchTest_8()
 googleAmazonLowPatternSearchTest_8()
+
+
 """
 
-#leftDeepSimple()
-#bushySimple()
-nestedSeq()
+"""local_search_tests"""
+
+leftDeepSimple()
+bushySimple()
+leftNestedSeq()
+bushyNestedSeq()
 #shouldShare()
 #shouldNotShare()
+mpgNoNestedSharing()
+mpgNoOneArgumentSharing()
+
 
 # benchmarks
 if INCLUDE_BENCHMARKS:
