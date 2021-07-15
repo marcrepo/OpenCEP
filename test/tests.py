@@ -263,8 +263,8 @@ googleAmazonLowPatternSearchTest_8()
 #leftDeepSimple()
 #bushySimple()
 nestedSeq()
-#obvious()
-
+#shouldShare()
+#shouldNotShare()
 
 # benchmarks
 if INCLUDE_BENCHMARKS:

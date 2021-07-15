@@ -148,12 +148,8 @@ def get_real_pattern_indices_for_computing_cost_without_diving(node,pattern_idx,
     to send above the real indices of the specific pattern.
     In this
     """
-    #todo: add unary node later
     if isinstance(node, TreePlanLeafNode):
-        check = [event_fixing_mapping[pattern_idx][node.event_name]]
-        return check
-    if isinstance(node, TreePlanNestedNode):
-        return get_real_pattern_indices_for_computing_cost_without_diving(node.sub_tree_plan, pattern_idx, event_fixing_mapping)
+        return [event_fixing_mapping[pattern_idx][node.event_name]]
     if isinstance(node, TreePlanBinaryNode):
         return get_real_pattern_indices_for_computing_cost_without_diving(node.left_child,pattern_idx, event_fixing_mapping)\
                +get_real_pattern_indices_for_computing_cost_without_diving(node.right_child,pattern_idx, event_fixing_mapping)

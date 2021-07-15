@@ -34,7 +34,7 @@ class TreePlanBuilder(ABC):
         if any(not isinstance(arg, PrimitiveEventStructure) for arg in pattern_positive_args):
             # the pattern contains nested parts and should be treated accordingly
             nested_topology, modified_statistics = self.__create_nested_topology(pattern, pattern_positive_statistics)
-            #pattern.statistics = modified_statistics
+            pattern.statistics = modified_statistics
             positive_root = TreePlanBuilder.__adjust_nested_indices(pattern, nested_topology)
         else:
             # the pattern is entirely flat
@@ -63,6 +63,9 @@ class TreePlanBuilder(ABC):
             if type(arg) == NegationOperator:
                 negative_indices.append(actual_index)
             actual_index += len(arg.get_all_event_names())
+
+        if len(negative_indices) == 0:
+            return statistics
 
         if StatisticsTypes.ARRIVAL_RATES in statistics:
             positive_statistics[StatisticsTypes.ARRIVAL_RATES] = \
