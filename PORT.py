@@ -8,24 +8,28 @@ from base.PatternStructure import NegationOperator, AndOperator, SeqOperator, Pr
 from base.Pattern import Pattern
 from port.dataFormats.syscall import SysCallDataFormatter
 from CEP import CEP
+import port.patterns
+
+# test names 
+# kleene_closure1
+# negation1
+
+test_name="kleene_closure1"
+
+def form_test_args(test_name):
+	pattern=eval("port.patterns."+test_name)
+	input_stream="port/eventFiles/"+test_name+".txt"
+	output_stream=test_name+".txt"
+	return (pattern,input_stream,output_stream)
+
+test_args=form_test_args(test_name)
+cep=CEP([test_args[0]])
+events=FileInputStream(test_args[1])
+cep.run(events,FileOutputStream("port/outputFiles",test_args[2]),SysCallDataFormatter())
+
+#cep=CEP([port.patterns.kleene_closure1])
 
 
-# Find an openat followed by a close with no intervening read all on same file handle
+#events=FileInputStream("port/eventFiles/kleene_closure1.txt")
 
-
-pattern = Pattern(
-	SeqOperator(PrimitiveEventStructure("openat", "a"),
-		    NegationOperator(PrimitiveEventStructure("read","b")),
-		    PrimitiveEventStructure("close","c")),
-	AndCondition(EqCondition(Variable("a", lambda x: x["File Handle"]),
-Variable("c", lambda x: x["File Handle"])),
-		     EqCondition(Variable("c", lambda x: x["File Handle"]),
-Variable("b", lambda x: x["File Handle"]))),
-        timedelta(minutes=10))
-
-
-cep=CEP([pattern])
-
-events=FileInputStream("port/eventFiles/sea_test2.txt")
-
-cep.run(events,FileOutputStream("port/outputFiles","output.txt"),SysCallDataFormatter())
+#cep.run(events,FileOutputStream("port/outputFiles","output.txt"),SysCallDataFormatter())

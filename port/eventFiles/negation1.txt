@@ -1,0 +1,4 @@
+openat, 3
+fstat, 3
+read, 3
+close, 3
