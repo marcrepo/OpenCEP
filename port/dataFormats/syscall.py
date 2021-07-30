@@ -16,6 +16,7 @@ ADDITIONAL_OPTIONAL_KEYS = [PROBABILITY_KEY]
 
 current_time=datetime.now()
 time_increment=timedelta(microseconds=1)
+line_number=1   # record the line number in the input stream
 
 
 class SysCallEventTypeClassifier(EventTypeClassifier):
@@ -37,14 +38,21 @@ class SysCallDataFormatter(DataFormatter):
         super().__init__(event_type_classifier)
 
     def parse_event(self, raw_data: str):
-        """
-        Parses a metastock 7 formatted string into an event.
-        """
         event_attributes = raw_data.replace("\n", "").split(",")
+        parsed_events=dict(zip(
+            SEA_COLUMN_KEYS,
+            map(str_to_number, event_attributes)
+        ))
+        global line_number
+        parsed_events["Line#"]=line_number
+        line_number+=1
+        return parsed_events
+        """
         return dict(zip(
             SEA_COLUMN_KEYS,
             map(str_to_number, event_attributes)
         ))
+        """
 
     def get_event_timestamp(self, event_payload: dict):
         """

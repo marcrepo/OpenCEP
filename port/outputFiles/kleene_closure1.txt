@@ -1,0 +1,52 @@
+{'SysCall': 'blue', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 1}
+
+{'SysCall': 'blue', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 1}
+
+{'SysCall': 'blue', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 2}
+
+{'SysCall': 'blue', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 2}
+
+{'SysCall': 'blue', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 2}
+
+{'SysCall': 'blue', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 2}
+
+{'SysCall': 'blue', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 3}
+
+{'SysCall': 'blue', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 3}
+
+{'SysCall': 'blue', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 3}
+
+{'SysCall': 'blue', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 3}
+
+{'SysCall': 'blue', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 3}
+
+{'SysCall': 'blue', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 3}
+
+{'SysCall': 'blue', 'File Handle': 1}
+{'SysCall': 'red', 'File Handle': 3}
+
+{'SysCall': 'blue', 'File Handle': 2}
+{'SysCall': 'red', 'File Handle': 3}
+

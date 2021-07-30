@@ -24,12 +24,17 @@ def form_test_args(test_name):
 
 test_args=form_test_args(test_name)
 cep=CEP([test_args[0]])
-events=FileInputStream(test_args[1])
-cep.run(events,FileOutputStream("port/outputFiles",test_args[2]),SysCallDataFormatter())
+input_stream=FileInputStream(test_args[1])
 
-#cep=CEP([port.patterns.kleene_closure1])
+# to dump matches to a file
+# cep.run(input_stream,FileOutputStream("port/outputFiles",test_args[2]),SysCallDataFormatter())
 
+# dump matches to an output stream that we can read
+output_stream=OutputStream()
+cep.run(input_stream,output_stream,SysCallDataFormatter())
 
-#events=FileInputStream("port/eventFiles/kleene_closure1.txt")
-
-#cep.run(events,FileOutputStream("port/outputFiles","output.txt"),SysCallDataFormatter())
+for x in output_stream:
+	print("---Start Match---")
+	for y in x.events:
+		print(y)
+	print("---End Match---\n")
