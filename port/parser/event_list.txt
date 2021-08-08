@@ -1,0 +1,7 @@
+open, 1
+open, 2
+open, 1
+read, 2
+read, 3
+close, 1
+close, 2

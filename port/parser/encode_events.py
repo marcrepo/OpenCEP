@@ -5,12 +5,17 @@ import sys
 sys.path.append('../..')   # so we can import condition and base modules
 
 # from patterns.py (start)
+from stream.Stream import OutputStream
+from stream.FileStream import FileInputStream
+from datetime import timedelta
 from condition.Condition import Variable, TrueCondition, BinaryCondition, SimpleCondition
 from condition.CompositeCondition import AndCondition
 from condition.BaseRelationCondition import NotEqCondition, EqCondition, GreaterThanCondition, GreaterThanEqCondition, \
     SmallerThanEqCondition
 from base.PatternStructure import NegationOperator, AndOperator, SeqOperator, PrimitiveEventStructure, KleeneClosureOperator
 from base.Pattern import Pattern
+from port.dataFormats.syscall import SysCallDataFormatter
+from CEP import CEP
 # from patterns.py (end)
 
 sys.path.remove("../..")  # no longer need the addition to the path for base and condition
@@ -30,6 +35,22 @@ class RewriteListener(PortListener):
     def exitProgram(self, ctx):
         print("End Parsing")
         print(RewriteListener.event_list)
+        pattern=Pattern(
+            SeqOperator(*RewriteListener.event_list),
+            TrueCondition(),
+            timedelta(minutes=5)
+        )
+        print("pattern="+str(pattern))
+        cep=CEP([pattern])
+        input_stream=FileInputStream("event_list.txt")
+        output_stream=OutputStream()
+        cep.run(input_stream,output_stream,SysCallDataFormatter())
+
+        for x in output_stream:
+	        print("---Start Match---")
+	        for y in x.events:
+		        print(y)
+	        print("---End Match---\n")
 
     # Enter a parse tree produced by ArrayInitParser#value.
     def enterEvent(self, ctx):
